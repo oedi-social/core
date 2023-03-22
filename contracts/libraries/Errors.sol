@@ -18,6 +18,7 @@ library Errors {
     error CollectModuleNotWhitelisted();
     error FollowModuleNotWhitelisted();
     error ReferenceModuleNotWhitelisted();
+    error JoinModuleNotWhitelisted();
     error ProfileCreatorNotWhitelisted();
     error NotProfileOwner();
     error NotProfileOwnerOrDispatcher();
