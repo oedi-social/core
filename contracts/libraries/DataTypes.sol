@@ -399,4 +399,43 @@ library DataTypes {
         bool[] enables;
         EIP712Signature sig;
     }
+    /**
+    * @notice A struct containing the parameters required for the 'group()' function.
+    *
+    * @param profileId The token ID of the profile to publish/create the group.
+    * @param contentURI The URI to set for this group.
+    * @param collectModule The collect module to set for this group.
+    * @param collectModuleInitData The data to pass to the collect module's initialization.
+    * @param joinModule The join module to set for this group.
+    * @param joinModuleInitData The data to pass to the join module's initialization.
+    */
+    struct GroupData {
+        uint256 profileId;
+        string contentURI;
+        address collectModule;
+        bytes collectModuleInitData;
+        address joinModule;
+        bytes joinModuleInitData;
+    }
+    /**
+    * @notice A struct containing the parameters required for the 'groupWithSig()' function. Parameters are the same as
+    * the regular 'group()' function, with an added EIP712Signature.
+    *
+    * @param profileId The token ID of the profile to publish/create the group.
+    * @param contentURI The URI to set for this group.
+    * @param collectModule The collect module to set for this group.
+    * @param collectModuleInitData The data to pass to the collect module's initialization.
+    * @param joinModule The join module to set for this group.
+    * @param joinModuleInitData The data to pass to the join module's initialization.
+    * @param sig The EIP712Signature struct containing the profile owner's signature.
+    */
+    struct GroupWithSigData {
+        uint256 profileId;
+        string contentURI;
+        address collectModule;
+        bytes collectModuleInitData;
+        address joinModule;
+        bytes joinModuleInitData;
+        EIP712Signature sig;
+    }
 }
