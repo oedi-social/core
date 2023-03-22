@@ -380,6 +380,23 @@ library PublishingLogic {
                 collectModuleInitData
             );
     }
+    function _initPubJoinModule(
+        uint256 profileId,
+        uint256 groupId, // aka pubId
+        address joinModule,
+        bytes memory joinModuleInitData,
+        mapping(uint256 => DataTypes.GroupPubIdStruct) storage _groupPubIdByProfileId,
+        mapping(address => bool) storage _joinModuleWhitelisted
+    ) private returns (bytes memory) {
+        if (!_joinModuleWhitelisted[joinModule]) revert Errors.JoinModuleNotWhitelisted();
+        _groupPubIdByProfileId[profileId][groupId].joinModule = joinModule;
+        return
+        // using FollowModule interface to initialize join module
+            IFollowModule(joinModule).initializeFollowModule(
+                groupId, // using groupId as join module should be associated with group not profile
+                joinModuleInitData
+            );
+    }
 
     function _initPubReferenceModule(
         uint256 profileId,
