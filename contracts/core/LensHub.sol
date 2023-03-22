@@ -408,6 +408,63 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
                 vars.referenceModuleInitData
             );
     }
+    /// @inheritdoc ILensHub
+    function group(DataTypes.GroupData calldata vars)
+    external
+    override
+    whenPublishingEnabled
+    returns (uint256)
+    {
+        _validateCallerIsProfileOwnerOrDispatcher(vars.profileId);
+        return
+        _createGroup(
+            vars.profileId,
+            vars.contentURI,
+            vars.collectModule,
+            vars.collectModuleInitData,
+            vars.referenceModule,
+            vars.referenceModuleInitData
+        );
+    }
+    /// @inheritdoc ILensHub
+    function groupWithSig(DataTypes.GroupWithSigData calldata vars)
+    external
+    override
+    whenPublishingEnabled
+    returns (uint256)
+    {
+        address owner = ownerOf(vars.profileId);
+        unchecked {
+            _validateRecoveredAddress(
+                _calculateDigest(
+                    keccak256(
+                        abi.encode(
+                            GROUP_WITH_SIG_TYPEHASH,
+                            vars.profileId,
+                            keccak256(bytes(vars.contentURI)),
+                            vars.collectModule,
+                            keccak256(vars.collectModuleInitData),
+                            vars.referenceModule,
+                            keccak256(vars.referenceModuleInitData),
+                            sigNonces[owner]++,
+                            vars.sig.deadline
+                        )
+                    )
+                ),
+                owner,
+                vars.sig
+            );
+        }
+        return
+        _createGroup(
+            vars.profileId,
+            vars.contentURI,
+            vars.collectModule,
+            vars.collectModuleInitData,
+            vars.referenceModule,
+            vars.referenceModuleInitData
+        );
+    }
 
     /// @inheritdoc ILensHub
     function comment(DataTypes.CommentData calldata vars)
@@ -935,6 +992,31 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
                 _pubByIdByProfile,
                 _collectModuleWhitelisted,
                 _referenceModuleWhitelisted
+            );
+            return pubId;
+        }
+    }
+    function _createGroup(
+        uint256 profileId,
+        string memory contentURI,
+        address collectModule,
+        bytes memory collectModuleData,
+        address joinModule,
+        bytes memory joinModuleData
+    ) internal returns (uint256) {
+        unchecked {
+            uint256 pubId = ++_profileById[profileId].pubCount;
+            PublishingLogic.createGroup(
+                profileId,
+                contentURI,
+                collectModule,
+                collectModuleData,
+                joinModule,
+                joinModuleData,
+                pubId,
+                _groupPubByIdByProfile,
+                _collectModuleWhitelisted,
+                _joinModuleWhitelisted
             );
             return pubId;
         }
