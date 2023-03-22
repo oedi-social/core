@@ -171,6 +171,69 @@ library PublishingLogic {
     }
 
     /**
+    * @notice Creates a group publication mapped to the given profile.
+    *
+    * @dev To avoid a stack too deep error, reference parameters are passed in memory rather than calldata.
+    *
+    * @param profileId The profile ID to associate this publication to.
+    * @param contentURI The URI to set for this publication.
+    * @param collectModule The collect module to set for this publication.
+    * @param collectModuleInitData The data to pass to the collect module for publication initialization.
+    * @param joinModule The join module to set for this publication.
+    * @param joinModuleInitData The data to pass to the join module for publication initialization.
+    * @param pubId The publication ID to associate with this publication.
+    * @param _groupPubByIdByProfile The storage reference to the mapping of group publications by publication ID by profile ID.
+    * @param _collectModuleWhitelisted The storage reference to the mapping of whitelist status by collect module address.
+    * @param _joinModuleWhitelisted The storage reference to the mapping of whitelist status by join module address.
+    */
+    function createGroup(
+        uint256 profileId,
+        string memory contentURI,
+        address collectModule,
+        bytes memory collectModuleInitData,
+        address joinModule,
+        bytes memory joinModuleInitData,
+        uint256 pubId,
+        mapping(uint256 => mapping(uint256 => DataTypes.PublicationStruct))
+            storage _groupPubByIdByProfile,
+        mapping(address => bool) storage _collectModuleWhitelisted,
+        mapping(address => bool) storage _joinModuleWhitelisted
+    ) external {
+        _groupPubByIdByProfile[profileId][pubId].contentURI = contentURI;
+
+        // Collect module initialization
+        bytes memory collectModuleReturnData = _initPubCollectModule(
+            profileId,
+            pubId,
+            collectModule,
+            collectModuleInitData,
+            _groupPubByIdByProfile,
+            _collectModuleWhitelisted
+        );
+
+        // Join module initialization
+        bytes memory joinModuleReturnData = _initPubJoinModule(
+            profileId,
+            pubId,
+            joinModule,
+            joinModuleInitData,
+            _groupPubByIdByProfile,
+            _joinModuleWhitelisted
+        );
+
+        emit Events.GroupCreated(
+            profileId,
+            pubId,
+            contentURI,
+            collectModule,
+            collectModuleReturnData,
+            joinModule,
+            joinModuleReturnData,
+            block.timestamp
+        );
+    }
+
+    /**
      * @notice Creates a comment publication mapped to the given profile.
      *
      * @dev This function is unique in that it requires many variables, so, unlike the other publishing functions,
