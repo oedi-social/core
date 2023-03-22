@@ -86,6 +86,7 @@ library Events {
         bool indexed whitelisted,
         uint256 timestamp
     );
+    // TODO: Add JoinModuleWhitelisted event here
 
     /**
      * @dev Emitted when a reference module is added to or removed from the whitelist.
@@ -213,6 +214,32 @@ library Events {
         bytes collectModuleReturnData,
         address referenceModule,
         bytes referenceModuleReturnData,
+        uint256 timestamp
+    );
+
+
+    /**
+    * @dev Emitted when a group is created.
+    *
+    * @param profileId The profile's token ID, which is the group's creator.
+    * @param groupId The newly created group's ID.
+    * @param contentURI The URI mapped to this new group.
+    * @param collectModule The collect module mapped to this new group. This CANNOT be the zero address.
+    * @param collectModuleReturnData The data returned from the collect module's initialization for this given
+    * group. This is abi encoded and totally depends on the collect module chosen.
+    * @param joinModule The join module mapped to this new group. This CANNOT be the zero address.
+    * @param joinModuleReturnData The data returned from the join module's initialization for this given
+    * group. This is abi encoded and totally depends on the join module chosen.
+    * @param timestamp The current block timestamp.
+    */
+    event GroupCreated(
+        uint256 indexed profileId,
+        uint256 indexed groupId,
+        string contentURI,
+        address collectModule,
+        bytes collectModuleReturnData,
+        address joinModule,
+        bytes joinModuleReturnData,
         uint256 timestamp
     );
 
