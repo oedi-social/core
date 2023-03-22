@@ -26,12 +26,14 @@ library DataTypes {
      * @notice An enum specifically used in a helper function to easily retrieve the publication type for integrations.
      *
      * @param Post A standard post, having a URI, a collect module but no pointer to another publication.
+     * @param Group A group, having a URI, a collect module and a join module.
      * @param Comment A comment, having a URI, a collect module and a pointer to another publication.
      * @param Mirror A mirror, having a pointer to another publication, but no URI or collect module.
      * @param Nonexistent An indicator showing the queried publication does not exist.
      */
     enum PubType {
         Post,
+        Group,
         Comment,
         Mirror,
         Nonexistent
