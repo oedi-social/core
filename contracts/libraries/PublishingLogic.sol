@@ -378,6 +378,82 @@ library PublishingLogic {
     }
 
     /**
+    * @notice Creates a comment publication mapped to the given groupId.
+    *
+    * @dev This function is unique in that it requires many variables, so, unlike the other publishing functions,
+    * we need to pass the full GroupCommentData struct in memory to avoid a stack too deep error.
+    *
+    * @param vars The GroupCommentData struct to use to create the comment.
+    * @param pubId The publication ID to associate with this publication.
+    * @param _profileById The storage reference to the mapping of profile structs by IDs.
+    * @param _groupPubByIdByProfile The storage reference to the mapping of publications by group ID by profile ID.
+    * @param _collectModuleWhitelisted The storage reference to the mapping of whitelist status by collect module address.
+    * @param _referenceModuleWhitelisted The storage reference to the mapping of whitelist status by reference module address.
+    */
+    function createGroupComment(
+        DataTypes.GroupCommentData memory vars,
+        uint256 pubId,
+        mapping(uint256 => DataTypes.ProfileStruct) storage _profileById,
+        mapping(uint256 => mapping(uint256 => DataTypes.PublicationStruct))
+            storage _groupPubByIdByProfile,
+        mapping(address => bool) storage _collectModuleWhitelisted,
+        mapping(address => bool) storage _referenceModuleWhitelisted
+    ) external {
+        // Validate existence of the pointed publication
+        uint256 pubCount = _profileById[vars.profileIdPointed].pubCount;
+        if (pubCount < vars.pubIdPointed || vars.pubIdPointed == 0)
+            revert Errors.PublicationDoesNotExist();
+
+        // Ensure the pointed publication is not the comment being created
+        if (vars.profileId == vars.profileIdPointed && vars.pubIdPointed == pubId)
+            revert Errors.CannotCommentOnSelf();
+
+        _groupPubByIdByProfile[vars.profileId][pubId].contentURI = vars.contentURI;
+        _groupPubByIdByProfile[vars.profileId][pubId].profileIdPointed = vars.profileIdPointed;
+        _groupPubByIdByProfile[vars.profileId][pubId].pubIdPointed = vars.pubIdPointed;
+
+        // Collect Module Initialization
+        bytes memory collectModuleReturnData = _initPubCollectModule(
+            vars.profileId,
+            pubId,
+            vars.collectModule,
+            vars.collectModuleInitData,
+            _groupPubByIdByProfile,
+            _collectModuleWhitelisted
+        );
+
+        // Reference module initialization
+        bytes memory referenceModuleReturnData = _initPubReferenceModule(
+            vars.profileId,
+            pubId,
+            vars.referenceModule,
+            vars.referenceModuleInitData,
+            _groupPubByIdByProfile,
+            _referenceModuleWhitelisted
+        );
+
+        // Reference module validation
+        address refModule = _groupPubByIdByProfile[vars.profileIdPointed][vars.pubIdPointed]
+            .referenceModule;
+        if (refModule != address(0)) {
+            IReferenceModule(refModule).processComment(
+                vars.profileId,
+                vars.profileIdPointed,
+                vars.pubIdPointed,
+                vars.referenceModuleData
+            );
+        }
+
+        // Prevents a stack too deep error
+        _emitGroupCommentCreated(
+            vars,
+            pubId,
+            collectModuleReturnData,
+            reference
+        );
+    }
+
+    /**
      * @notice Creates a mirror publication mapped to the given profile.
      *
      * @param vars The MirrorData struct to use to create the mirror.
@@ -514,6 +590,27 @@ library PublishingLogic {
             vars.contentURI,
             vars.profileIdPointed,
             vars.pubIdPointed,
+            vars.referenceModuleData,
+            vars.collectModule,
+            collectModuleReturnData,
+            vars.referenceModule,
+            referenceModuleReturnData,
+            block.timestamp
+        );
+    }
+    function _emitGroupCommentCreated(
+        DataTypes.GroupCommentData memory vars,
+        uint256 pubId,
+        bytes memory collectModuleReturnData,
+        bytes memory referenceModuleReturnData
+    ) private {
+        emit Events.GroupCommentCreated(
+            vars.profileId,
+            pubId,
+            vars.contentURI,
+            vars.profileIdPointed,
+            vars.pubIdPointed,
+            vars.groupId,
             vars.referenceModuleData,
             vars.collectModule,
             collectModuleReturnData,

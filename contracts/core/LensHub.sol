@@ -593,6 +593,69 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
     }
 
     /// @inheritdoc ILensHub
+    function groupComment(DataTypes.GroupCommentData calldata vars)
+    external
+    override
+    whenPublishingEnabled
+    returns (uint256)
+    {
+        _validateCallerIsProfileOwnerOrDispatcher(vars.profileId);
+        _validationGroupIdAndCallerIsGroupMember(vars.profileId, vars.profileIdPointed, vars.groupId);
+        return _createGroupComment(vars);
+    }
+
+    /// @inheritdoc ILensHub
+    function groupCommentWithSig(DataTypes.GroupCommentWithSigData calldata vars)
+    external
+    override
+    whenPublishingEnabled
+    returns (uint256)
+    {
+        address owner = ownerOf(vars.profileId);
+    unchecked {
+        _validateRecoveredAddress(
+            _calculateDigest(
+                keccak256(
+                    abi.encode(
+                        GROUP_COMMENT_WITH_SIG_TYPEHASH,
+                        vars.profileId,
+                        keccak256(bytes(vars.contentURI)),
+                        vars.profileIdPointed,
+                        vars.pubIdPointed,
+                        vars.groupId,
+                        keccak256(vars.referenceModuleData),
+                        vars.collectModule,
+                        keccak256(vars.collectModuleInitData),
+                        vars.referenceModule,
+                        keccak256(vars.referenceModuleInitData),
+                        sigNonces[owner]++,
+                        vars.sig.deadline
+                    )
+                )
+            ),
+            owner,
+            vars.sig
+        );
+    }
+    _validationGroupIdAndCallerIsGroupMember(vars.profileId, vars.profileIdPointed, vars.groupId);
+    return
+        _createGroupComment(
+            DataTypes.GroupCommentData(
+                vars.profileId,
+                vars.contentURI,
+                vars.profileIdPointed,
+                vars.pubIdPointed,
+                vars.groupId,
+                vars.referenceModuleData,
+                vars.collectModule,
+                vars.collectModuleInitData,
+                vars.referenceModule,
+                vars.referenceModuleInitData
+            )
+        );
+    }
+
+    /// @inheritdoc ILensHub
     function mirror(DataTypes.MirrorData calldata vars)
         external
         override
@@ -1142,6 +1205,21 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
                 pubId,
                 _profileById,
                 _pubByIdByProfile,
+                _collectModuleWhitelisted,
+                _referenceModuleWhitelisted
+            );
+            return pubId;
+        }
+    }
+
+    function _createGroupComment(DataTypes.GroupCommentData memory vars) internal returns (uint256) {
+        unchecked {
+            uint256 pubId = ++_profileById[vars.profileId].pubCount;
+            PublishingLogic.createGroupComment(
+                vars,
+                pubId,
+                _profileById,
+                _groupPubByIdByProfile,
                 _collectModuleWhitelisted,
                 _referenceModuleWhitelisted
             );
