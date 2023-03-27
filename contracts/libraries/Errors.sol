@@ -36,6 +36,8 @@ library Errors {
     error CannotCommentOnSelf();
     error NotWhitelisted();
     error InvalidParameter();
+    error NoGroupMembers();
+    error NotGroupMember();
 
     // Module Errors
     error InitParamsInvalid();

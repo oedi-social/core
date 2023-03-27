@@ -467,6 +467,73 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
     }
 
     /// @inheritdoc ILensHub
+    function groupPost(DataTypes.GroupPostData calldata vars)
+    external
+    override
+    whenPublishingEnabled
+    returns (uint256)
+    {
+        _validateCallerIsProfileOwnerOrDispatcher(vars.profileId);
+        _validationGroupIdAndCallerIsGroupMember(vars.profileId, vars.profileIdPointed, vars.groupId);
+        return
+        _createGroupPost(
+            vars.profileId,
+            vars.profileIdPointed,
+            vars.groupId,
+            vars.contentURI,
+            vars.collectModule,
+            vars.collectModuleInitData,
+            vars.referenceModule,
+            vars.referenceModuleInitData
+        );
+    }
+
+    /// @inheritdoc ILensHub
+    function groupPostWithSig(DataTypes.GroupPostWithSigData calldata vars)
+    external
+    override
+    whenPublishingEnabled
+    returns (uint256)
+    {
+        address owner = ownerOf(vars.profileId);
+        unchecked {
+            _validateRecoveredAddress(
+                _calculateDigest(
+                    keccak256(
+                        abi.encode(
+                            GROUP_POST_WITH_SIG_TYPEHASH,
+                            vars.profileId,
+                            vars.profileIdPointed,
+                            vars.groupId,
+                            keccak256(bytes(vars.contentURI)),
+                            vars.collectModule,
+                            keccak256(vars.collectModuleInitData),
+                            vars.referenceModule,
+                            keccak256(vars.referenceModuleInitData),
+                            sigNonces[owner]++,
+                            vars.sig.deadline
+                        )
+                    )
+                ),
+                owner,
+                vars.sig
+            );
+        }
+        _validationGroupIdAndCallerIsGroupMember(vars.profileId, vars.profileIdPointed, vars.groupId);
+        return
+        _createGroupPost(
+            vars.profileId,
+            vars.profileIdPointed,
+            vars.groupId,
+            vars.contentURI,
+            vars.collectModule,
+            vars.collectModuleInitData,
+            vars.referenceModule,
+            vars.referenceModuleInitData
+        );
+    }
+
+    /// @inheritdoc ILensHub
     function comment(DataTypes.CommentData calldata vars)
         external
         override
@@ -1022,6 +1089,38 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
         }
     }
 
+    function _createGroupPost(
+        uint256 profileId,
+        uint256 profileIdPointed,
+        uint256 groupId,
+        string memory contentURI,
+        address collectModule,
+        bytes memory collectModuleData,
+        address referenceModule,
+        bytes memory referenceModuleData
+
+    ) internal returns (uint256) {
+        unchecked {
+            uint256 pubId = ++_profileById[profileId].pubCount;
+            PublishingLogic.createGroupPost(
+                profileId,
+                profileIdPointed,
+                groupId,
+                contentURI,
+                collectModule,
+                collectModuleData,
+                referenceModule,
+                referenceModuleData,
+                pubId,
+                _pubByIdByProfile,
+                _groupPubByIdByProfile,
+                _collectModuleWhitelisted,
+                _referenceModuleWhitelisted
+            );
+            return pubId;
+        }
+    }
+
     /*
      * If the profile ID is zero, this is the equivalent of "unsetting" a default profile.
      * Note that the wallet address should either be the message sender or validated via a signature
@@ -1110,6 +1209,14 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
 
     function _validateCallerIsProfileOwner(uint256 profileId) internal view {
         if (msg.sender != ownerOf(profileId)) revert Errors.NotProfileOwner();
+    }
+
+    function _validationGroupIdAndCallerIsGroupMember(uint256 profileId, uint256 profileIdPointed, uint256 groupId) internal view {
+        address joinNFT = _groupPubByIdByProfile[profileIdPointed][groupId].joinNFT;
+        address profileOwner = ownerOf(profileId);
+        if(joinNFT == address(0)) revert Errors.NoGroupMembers();
+
+        if (IERC721(joinNFT).balanceOf(profileOwner) != 0) revert Errors.NotGroupMember(); //a group creator also need to join Group first
     }
 
     function _validateCallerIsGovernance() internal view {

@@ -171,6 +171,76 @@ library PublishingLogic {
     }
 
     /**
+    * @notice Creates a post publication mapped to the given group.
+    *
+    * @dev To avoid a stack too deep error, reference parameters are passed in memory rather than calldata.
+    *
+    * @param profileId The profile ID publishing this post.
+    * @param profileIdPointed The profile ID pointed, which is the groupId creator.
+    * @param groupId The group ID to associate this publication to.
+    * @param contentURI The URI to set for this publication.
+    * @param collectModule The collect module to set for this publication.
+    * @param collectModuleInitData The data to pass to the collect module for publication initialization.
+    * @param referenceModule The reference module to set for this publication, if any.
+    * @param referenceModuleInitData The data to pass to the reference module for publication initialization.
+    * @param pubId The publication ID to associate with this publication.
+    * @param _groupPubByIdByProfile The storage reference to the mapping of group publications by publication ID by profile ID.
+    * @param _collectModuleWhitelisted The storage reference to the mapping of whitelist status by collect module address.
+    * @param _referenceModuleWhitelisted The storage reference to the mapping of whitelist status by reference module address.
+    */
+    function createGroupPost(
+        uint256 profileId,
+        uint256 profileIdPointed,
+        uint256 groupId,
+        string memory contentURI,
+        address collectModule,
+        bytes memory collectModuleInitData,
+        address referenceModule,
+        bytes memory referenceModuleInitData,
+        uint256 pubId,
+        mapping(uint256 => mapping(uint256 => DataTypes.GroupPublicationStruct))
+            storage _groupPubByIdByProfile,
+        mapping(address => bool) storage _collectModuleWhitelisted,
+        mapping(address => bool) storage _referenceModuleWhitelisted
+    ) external {
+        _groupPubByIdByProfile[profileId][pubId].contentURI = contentURI;
+        _groupPubByIdByProfile[profileId][pubId].profileIdPointed = profileIdPointed;
+        _groupPubByIdByProfile[profileId][pubId].pubIdPointed = groupId;
+
+        // Collect module initialization
+        bytes memory collectModuleReturnData = _initPubCollectModule(
+            profileId,
+            pubId,
+            collectModule,
+            collectModuleInitData,
+            _groupPubByIdByProfile,
+            _collectModuleWhitelisted
+        );
+
+        // Reference module initialization
+        bytes memory referenceModuleReturnData = _initPubReferenceModule(
+            profileId,
+            pubId,
+            referenceModule,
+            referenceModuleInitData,
+            _groupPubByIdByProfile,
+            _referenceModuleWhitelisted
+        );
+
+        emit Events.GroupPostCreated(
+            profileId,
+            groupId,
+            pubId,
+            contentURI,
+            collectModule,
+            collectModuleReturnData,
+            referenceModule,
+            referenceModuleReturnData,
+            block.timestamp
+        );
+    }
+
+    /**
     * @notice Creates a group publication mapped to the given profile.
     *
     * @dev To avoid a stack too deep error, reference parameters are passed in memory rather than calldata.
@@ -199,6 +269,9 @@ library PublishingLogic {
         mapping(address => bool) storage _collectModuleWhitelisted,
         mapping(address => bool) storage _joinModuleWhitelisted
     ) external {
+        // TODO: instead of creating separate Group Pub, we should fill the same Pub struct with the group data and new data only should be stored on new Group struct
+            // This will allow us to use the same functions for both group and profile publications
+            // disadvantage is that we will have to check if the publication is a group or profile publication ?
         _groupPubByIdByProfile[profileId][pubId].contentURI = contentURI;
 
         // Collect module initialization
