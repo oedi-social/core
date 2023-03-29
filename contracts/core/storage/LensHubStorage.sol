@@ -65,6 +65,10 @@ abstract contract LensHubStorage {
     keccak256(
         'GroupCommentWithSig(uint256 profileId,string contentURI,uint256 profileIdPointed,uint256 pubIdPointed,uint256 groupId,bytes referenceModuleData,address collectModule,bytes collectModuleInitData,address referenceModule,bytes referenceModuleInitData,uint256 nonce,uint256 deadline)'
     );
+    bytes32 internal constant GROUP_MIRROR_WITH_SIG_TYPEHASH =
+    keccak256(
+        'GroupMirrorWithSig(uint256 profileId,uint256 profileIdPointed,uint256 pubIdPointed,uint256 groupId,bytes referenceModuleData,address referenceModule,bytes referenceModuleInitData,uint256 nonce,uint256 deadline)'
+    );
 
     mapping(address => bool) internal _profileCreatorWhitelisted;
     mapping(address => bool) internal _followModuleWhitelisted;

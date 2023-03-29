@@ -397,6 +397,51 @@ library DataTypes {
     }
 
     /**
+     * @notice A struct containing the parameters required for the `groupMirror()` function.
+     *
+     * @param profileId The token ID of the profile to publish to.
+     * @param profileIdPointed The profile token ID to point the mirror to.
+     * @param pubIdPointed The publication ID to point the mirror to.
+     * @param groupId The group publication ID to point the mirror to its post.
+     * @param referenceModuleData The data passed to the reference module.
+     * @param referenceModule The reference module to set for the given publication, must be whitelisted.
+     * @param referenceModuleInitData The data to be passed to the reference module for initialization.
+     */
+    struct GroupMirrorData {
+        uint256 profileId;
+        uint256 profileIdPointed;
+        uint256 pubIdPointed;
+        uint256 groupId;
+        bytes referenceModuleData;
+        address referenceModule;
+        bytes referenceModuleInitData;
+    }
+
+    /**
+     * @notice A struct containing the parameters required for the `groupMirrorWithSig()` function. Parameters are the same as
+     * the regular `groupMirror()` function, with an added EIP712Signature.
+     *
+     * @param profileId The token ID of the profile to publish to.
+     * @param profileIdPointed The profile token ID to point the mirror to.
+     * @param pubIdPointed The publication ID to point the mirror to.
+     * @param groupId The group publication ID to point the mirror to its post.
+     * @param referenceModuleData The data passed to the reference module.
+     * @param referenceModule The reference module to set for the given publication, must be whitelisted.
+     * @param referenceModuleInitData The data to be passed to the reference module for initialization.
+     * @param sig The EIP712Signature struct containing the profile owner's signature.
+     */
+    struct GroupMirrorWithSigData {
+        uint256 profileId;
+        uint256 profileIdPointed;
+        uint256 pubIdPointed;
+        uint256 groupId;
+        bytes referenceModuleData;
+        address referenceModule;
+        bytes referenceModuleInitData;
+        EIP712Signature sig;
+    }
+
+    /**
      * @notice A struct containing the parameters required for the `followWithSig()` function. Parameters are the same
      * as the regular `follow()` function, with the follower's (signer) address and an EIP712Signature added.
      *

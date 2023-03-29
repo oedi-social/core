@@ -708,6 +708,63 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
             );
     }
 
+    /// @inheritdoc ILensHub
+    function groupMirror(DataTypes.GroupMirrorData calldata vars)
+    external
+    override
+    whenPublishingEnabled
+    returns (uint256)
+    {
+        _validateCallerIsProfileOwnerOrDispatcher(vars.profileId);
+        _validationGroupIdAndCallerIsGroupMember(vars.profileId, vars.profileIdPointed, vars.groupId);
+        return _createGroupMirror(vars);
+    }
+
+    /// @inheritdoc ILensHub
+    function groupMirrorWithSig(DataTypes.GroupMirrorWithSigData calldata vars)
+        external
+        override
+        whenPublishingEnabled
+        returns (uint256)
+    {
+        address owner = ownerOf(vars.profileId);
+        unchecked {
+            _validateRecoveredAddress(
+                _calculateDigest(
+                    keccak256(
+                        abi.encode(
+                            GROUP_MIRROR_WITH_SIG_TYPEHASH,
+                            vars.profileId,
+                            vars.profileIdPointed,
+                            vars.pubIdPointed,
+                            vars.groupId,
+                            keccak256(vars.referenceModuleData),
+                            vars.referenceModule,
+                            keccak256(vars.referenceModuleInitData),
+                            sigNonces[owner]++,
+                            vars.sig.deadline
+                        )
+                    )
+                ),
+                owner,
+                vars.sig
+            );
+        }
+        _validationGroupIdAndCallerIsGroupMember(vars.profileId, vars.profileIdPointed, vars.groupId);
+        return
+            _createGroupMirror(
+                DataTypes.GroupMirrorData(
+                    vars.profileId,
+                    vars.profileIdPointed,
+                    vars.pubIdPointed,
+                    vars.groupId,
+                    vars.referenceModuleData,
+                    vars.referenceModule,
+                    vars.referenceModuleInitData
+                )
+            );
+    }
+
     /**
      * @notice Burns a profile, this maintains the profile data struct, but deletes the
      * handle hash to profile ID mapping value.
@@ -1240,6 +1297,19 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
         }
     }
 
+    function _createGroupMirror(DataTypes.GroupMirrorData memory vars) internal returns (uint256) {
+        unchecked {
+            uint256 pubId = ++_profileById[vars.profileId].pubCount;
+            PublishingLogic.createGroupMirror(
+                vars,
+                pubId,
+                _pubByIdByProfileByGroup,
+                _referenceModuleWhitelisted
+            );
+            return pubId;
+        }
+    }
+
     function _setDispatcher(uint256 profileId, address dispatcher) internal {
         _dispatcherByProfile[profileId] = dispatcher;
         emit Events.DispatcherSet(profileId, dispatcher, block.timestamp);
@@ -1290,7 +1360,7 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
     }
 
     function _validationGroupIdAndCallerIsGroupMember(uint256 profileId, uint256 profileIdPointed, uint256 groupId) internal view {
-        address joinNFT = _groupPubByIdByProfile[profileIdPointed][groupId].joinNFT;
+        address joinNFT = _pubByIdByProfileIdByGroup[groupId][profileIdPointed][groupId].joinNFT; // TODO: check if this is correct
         address profileOwner = ownerOf(profileId);
         if(joinNFT == address(0)) revert Errors.NoGroupMembers();
 

@@ -362,6 +362,32 @@ library Events {
     );
 
     /**
+     * @dev Emitted when a "group mirror" is published.
+     *
+     * @param profileId The profile's token ID.
+     * @param pubId The new publication's ID.
+     * @param profileIdPointed The profile token ID that this mirror points to.
+     * @param groupId The group's ID, in which mirror is published.
+     * @param pubIdPointed The publication ID that this mirror points to.
+     * @param referenceModuleData The data passed to the reference module.
+     * @param referenceModule The reference module set for this publication.
+     * @param referenceModuleReturnData The data returned from the reference module at initialization. This is abi
+     * encoded and totally depends on the reference module chosen.
+     * @param timestamp The current block timestamp.
+     */
+    event GroupMirrorCreated(
+        uint256 indexed profileId,
+        uint256 indexed pubId,
+        uint256 profileIdPointed,
+        uint256 groupId,
+        uint256 pubIdPointed,
+        bytes referenceModuleData,
+        address referenceModule,
+        bytes referenceModuleReturnData,
+        uint256 timestamp
+    );
+
+    /**
      * @dev Emitted when a followNFT clone is deployed using a lazy deployment pattern.
      *
      * @param profileId The token ID of the profile to which this followNFT is associated.
