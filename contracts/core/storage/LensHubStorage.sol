@@ -88,6 +88,6 @@ abstract contract LensHubStorage {
 
     // Group Pub Storage variables
     mapping(address => bool) internal _joinModuleWhitelisted;
-    mapping(uint256 => mapping(uint256 => DataTypes.GroupPublicationStruct)) internal _groupPubByIdByProfile;
+    mapping(uint256 => mapping(uint256 => mapping(uint256 => DataTypes.GroupPublicationStruct))) internal _pubByIdByProfileByGroup;
 
 }
