@@ -190,7 +190,6 @@ library PublishingLogic {
     */
     function createGroupPost(
         uint256 profileId,
-        uint256 profileIdPointed,
         uint256 groupId,
         string memory contentURI,
         address collectModule,
@@ -198,32 +197,33 @@ library PublishingLogic {
         address referenceModule,
         bytes memory referenceModuleInitData,
         uint256 pubId,
-        mapping(uint256 => mapping(uint256 => DataTypes.GroupPublicationStruct))
-            storage _groupPubByIdByProfile,
+        mapping(uint256 => mapping(uint256 => mapping(uint256 => DataTypes.PublicationStruct)))
+            storage _pubByIdByGroupByProfile,
         mapping(address => bool) storage _collectModuleWhitelisted,
         mapping(address => bool) storage _referenceModuleWhitelisted
     ) external {
-        _groupPubByIdByProfile[profileId][pubId].contentURI = contentURI;
-        _groupPubByIdByProfile[profileId][pubId].profileIdPointed = profileIdPointed;
-        _groupPubByIdByProfile[profileId][pubId].pubIdPointed = groupId;
+        _pubByIdByGroupByProfile[profileId][groupId][pubId].contentURI = contentURI;
+        _pubByIdByGroupByProfile[profileId][groupId][pubId].pubIdPointed = groupId;
 
         // Collect module initialization
-        bytes memory collectModuleReturnData = _initPubCollectModule(
+        bytes memory collectModuleReturnData = _initGroupPubCollectModule(
             profileId,
+            groupId,
             pubId,
             collectModule,
             collectModuleInitData,
-            _groupPubByIdByProfile,
+            _pubByIdByGroupByProfile,
             _collectModuleWhitelisted
         );
 
         // Reference module initialization
         bytes memory referenceModuleReturnData = _initPubReferenceModule(
             profileId,
+            groupId,
             pubId,
             referenceModule,
             referenceModuleInitData,
-            _groupPubByIdByProfile,
+            _pubByIdByGroupByProfile,
             _referenceModuleWhitelisted
         );
 
@@ -264,16 +264,18 @@ library PublishingLogic {
         address joinModule,
         bytes memory joinModuleInitData,
         uint256 pubId,
-        mapping(uint256 => mapping(uint256 => DataTypes.PublicationStruct))
-            storage _groupPubByIdByProfile,
+        mapping(uint256 => mapping(uint256 => DataTypes.GroupStruct))
+            storage _groupById,
         mapping(address => bool) storage _collectModuleWhitelisted,
         mapping(address => bool) storage _joinModuleWhitelisted
     ) external {
         // TODO: instead of creating separate Group Pub, we should fill the same Pub struct with the group data and new data only should be stored on new Group struct
-            // This will allow us to use the same functions for both group and profile publications
+            // This will allow us to use the same functions for both group and profile publications. Ans: Params are different e.g: Post as to be associated with groupId and profileId
             // disadvantage is that we will have to check if the publication is a group or profile publication ?
         // TODO: need to replace _groupPubByIdByProfile with _pubByIdByProfileIdByGroup [HIGH]
-        _groupPubByIdByProfile[profileId][pubId].contentURI = contentURI;
+            // not require
+        _groupById[pubId].profileId = profileId;
+        _groupById[pubId].contentURI = contentURI;
 
         // Collect module initialization
         bytes memory collectModuleReturnData = _initPubCollectModule(
@@ -281,7 +283,7 @@ library PublishingLogic {
             pubId,
             collectModule,
             collectModuleInitData,
-            _groupPubByIdByProfile,
+            _groupById,
             _collectModuleWhitelisted
         );
 
@@ -291,7 +293,7 @@ library PublishingLogic {
             pubId,
             joinModule,
             joinModuleInitData,
-            _groupPubByIdByProfile,
+            _groupById,
             _joinModuleWhitelisted
         );
 
@@ -395,46 +397,48 @@ library PublishingLogic {
         DataTypes.GroupCommentData memory vars,
         uint256 pubId,
         mapping(uint256 => DataTypes.ProfileStruct) storage _profileById,
-        mapping(uint256 => mapping(uint256 => DataTypes.PublicationStruct))
-            storage _groupPubByIdByProfile,
+mapping(uint256 => mapping(uint256 => mapping(uint256 => DataTypes.PublicationStruct)))
+            storage _pubByIdByGroupByProfile,
         mapping(address => bool) storage _collectModuleWhitelisted,
         mapping(address => bool) storage _referenceModuleWhitelisted
     ) external {
+        if(vars.pubIdPointed == vars.groupId) revert Errors.CannotCommentOnGroup();
         // Validate existence of the pointed publication
-        uint256 pubCount = _profileById[vars.profileIdPointed].pubCount;
-        if (pubCount < vars.pubIdPointed || vars.pubIdPointed == 0)
+        uint256 pubIdPointed = _pubByIdByGroupByProfile[vars.profileIdPointed][vars.groupId][vars.pubIdPointed].pubIdPointed;
+        if (pubIdPointed == 0)
             revert Errors.PublicationDoesNotExist();
 
         // Ensure the pointed publication is not the comment being created
         if (vars.profileId == vars.profileIdPointed && vars.pubIdPointed == pubId)
             revert Errors.CannotCommentOnSelf();
 
-        _groupPubByIdByProfile[vars.profileId][pubId].contentURI = vars.contentURI;
-        _groupPubByIdByProfile[vars.profileId][pubId].profileIdPointed = vars.profileIdPointed;
-        _groupPubByIdByProfile[vars.profileId][pubId].pubIdPointed = vars.pubIdPointed;
+        _pubByIdByGroupByProfile[vars.profileId][vars.groupId][pubId].contentURI = vars.contentURI;
+        _pubByIdByGroupByProfile[vars.profileId][vars.groupId][pubId].profileIdPointed = vars.profileIdPointed;
+        _pubByIdByGroupByProfile[vars.profileId][vars.groupId][pubId].pubIdPointed = vars.pubIdPointed;
 
         // Collect Module Initialization
-        bytes memory collectModuleReturnData = _initPubCollectModule(
+        bytes memory collectModuleReturnData = _initGroupPubCollectModule(
             vars.profileId,
             pubId,
             vars.collectModule,
             vars.collectModuleInitData,
-            _groupPubByIdByProfile,
+            _pubByIdByGroupByProfile,
             _collectModuleWhitelisted
         );
 
         // Reference module initialization
-        bytes memory referenceModuleReturnData = _initPubReferenceModule(
+        bytes memory referenceModuleReturnData = _initGroupPubReferenceModule(
             vars.profileId,
+            vars.groupId,
             pubId,
             vars.referenceModule,
             vars.referenceModuleInitData,
-            _groupPubByIdByProfile,
+            _pubByIdByGroupByProfile,
             _referenceModuleWhitelisted
         );
 
         // Reference module validation
-        address refModule = _groupPubByIdByProfile[vars.profileIdPointed][vars.pubIdPointed]
+        address refModule = _pubByIdByGroupByProfile[vars.profileIdPointed][vars.groupId][vars.pubIdPointed]
             .referenceModule;
         if (refModule != address(0)) {
             IReferenceModule(refModule).processComment(
@@ -523,33 +527,33 @@ library PublishingLogic {
     function createGroupMirror(
         DataTypes.GroupMirrorData memory vars,
         uint256 pubId,
-        mapping(uint256 => mapping(uint256 => mapping(uint256 => DataTypes.GroupPublicationStruct)))
-        storage _pubByIdByProfileIdByGroup,
+        mapping(uint256 => mapping(uint256 => mapping(uint256 => DataTypes.PublicationStruct)))
+        storage _pubByIdByGroupByProfile,
         mapping(address => bool) storage _referenceModuleWhitelisted
     ) external {
         (uint256 rootProfileIdPointed, uint256 rootPubIdPointed, ) = Helpers.getPointedIfGroupMirror(
             vars.groupId,
             vars.profileIdPointed,
             vars.pubIdPointed,
-            _pubByIdByProfileIdByGroup
+            _pubByIdByGroupByProfile
         );
 
-        _pubByIdByProfileIdByGroup[vars.groupId][vars.profileId][pubId].profileIdPointed = rootProfileIdPointed;
-        _pubByIdByProfileIdByGroup[vars.groupId][vars.profileId][pubId].pubIdPointed = rootPubIdPointed;
+        _pubByIdByGroupByProfile[vars.profileId][vars.groupId][pubId].profileIdPointed = rootProfileIdPointed;
+        _pubByIdByGroupByProfile[vars.profileId][vars.groupId][pubId].pubIdPointed = rootPubIdPointed;
 
         // Reference module initialization
-        bytes memory referenceModuleReturnData = _initPubGroupReferenceModule(
-            vars.groupId,
+        bytes memory referenceModuleReturnData = _initGroupPubReferenceModule(
             vars.profileId,
+            vars.groupId,
             pubId,
             vars.referenceModule,
             vars.referenceModuleInitData,
-            _pubByIdByProfileIdByGroup,
+            _pubByIdByGroupByProfile,
             _referenceModuleWhitelisted
         );
 
         // Reference module validation
-        address refModule = _pubByIdByProfileIdByGroup[vars.groupId][rootProfileIdPointed][rootPubIdPointed]
+        address refModule = _pubByIdByGroupByProfile[rootProfileIdPointed][vars.groupId][rootPubIdPointed]
         .referenceModule;
         if (refModule != address(0)) {
             IReferenceModule(refModule).processMirror(
@@ -591,16 +595,55 @@ library PublishingLogic {
                 collectModuleInitData
             );
     }
+    function _initGroupPubCollectModule(
+        uint256 profileId,
+        uint256 pubId,
+        address collectModule,
+        bytes memory collectModuleInitData,
+        mapping(uint256 => mapping(uint256 => DataTypes.GroupStruct))
+            storage _groupPubById,
+        mapping(address => bool) storage _collectModuleWhitelisted
+    ) private returns (bytes memory) {
+        if (!_collectModuleWhitelisted[collectModule]) revert Errors.CollectModuleNotWhitelisted();
+        _groupPubById[pubId].collectModule = collectModule;
+        return
+            ICollectModule(collectModule).initializePublicationCollectModule(
+                profileId,
+                pubId,
+                collectModuleInitData
+            );
+    }
+    // overloading _initGroupPubCollectModule to support groupPubId & _pubByIdByGroupByProfile as a parameter
+    function _initGroupPubCollectModule(
+        uint256 profileId,
+        uint256 groupId,
+        uint256 pubId,
+        address collectModule,
+        bytes memory collectModuleInitData,
+        mapping(uint256 => mapping(uint256 => mapping(uint256 => DataTypes.PublicationStruct)))
+            storage _pubByIdByGroupByProfile,
+        mapping(address => bool) storage _collectModuleWhitelisted
+    ) private returns (bytes memory) {
+        if (!_collectModuleWhitelisted[collectModule]) revert Errors.CollectModuleNotWhitelisted();
+        _pubByIdByGroupByProfile[profileId][groupId][pubId].collectModule = collectModule;
+        return
+            ICollectModule(collectModule).initializePublicationCollectModule(
+                profileId,
+                pubId,
+                collectModuleInitData
+            );
+    }
+
     function _initPubJoinModule(
         uint256 profileId,
         uint256 groupId, // aka pubId
         address joinModule,
         bytes memory joinModuleInitData,
-        mapping(uint256 => DataTypes.GroupPubIdStruct) storage _groupPubIdByProfileId,
+        mapping(uint256 => DataTypes.GroupStruct) storage _groupPubId,
         mapping(address => bool) storage _joinModuleWhitelisted
     ) private returns (bytes memory) {
         if (!_joinModuleWhitelisted[joinModule]) revert Errors.JoinModuleNotWhitelisted();
-        _groupPubIdByProfileId[profileId][groupId].joinModule = joinModule;
+        _groupPubId[groupId].joinModule = joinModule;
         return
         // using FollowModule interface to initialize join module
             IFollowModule(joinModule).initializeFollowModule(
@@ -629,21 +672,20 @@ library PublishingLogic {
                 referenceModuleInitData
             );
     }
-
     function _initGroupPubReferenceModule(
-        uint256 groupId,
         uint256 profileId,
+        uint256 groupId,
         uint256 pubId,
         address referenceModule,
         bytes memory referenceModuleInitData,
-        mapping(uint256 => mapping(uint256 => mapping(uint256 => DataTypes.GroupPublicationStruct)))
-            storage _pubByIdByProfileIdByGroup,
+        mapping(uint256 => mapping(uint256 => mapping(uint256 => DataTypes.PublicationStruct)))
+            storage _pubByIdByGroupByProfile,
         mapping(address => bool) storage _referenceModuleWhitelisted
     ) private returns (bytes memory) {
         if (referenceModule == address(0)) return new bytes(0);
         if (!_referenceModuleWhitelisted[referenceModule])
             revert Errors.ReferenceModuleNotWhitelisted();
-        _pubByIdByProfileIdByGroup[groupId][profileId][pubId].referenceModule = referenceModule;
+        _pubByIdByGroupByProfile[profileId][groupId][pubId].referenceModule = referenceModule;
         return
             IReferenceModule(referenceModule).initializeReferenceModule(
                 profileId,

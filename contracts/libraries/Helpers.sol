@@ -71,8 +71,8 @@ library Helpers {
         uint256 groupId,
         uint256 profileId,
         uint256 pubId,
-        mapping(uint256 => mapping(uint256 => mapping(uint256 => DataTypes.GroupPublicationStruct)))
-            storage _pubByIdByProfileIdByGroup
+        mapping(uint256 => mapping(uint256 => mapping(uint256 => DataTypes.PublicationStruct)))
+            storage _pubByIdByGroupByProfile
     )
         internal
         view
@@ -82,17 +82,17 @@ library Helpers {
             address
         )
     {
-        address collectModule = _groupPubByIdByProfile[groupId][profileId][pubId].collectModule;
+        address collectModule = _pubByIdByGroupByProfile[profileId][groupId][pubId].collectModule;
         if (collectModule != address(0)) {
             return (profileId, pubId, collectModule);
         } else {
-            uint256 pointedTokenId = _groupPubByIdByProfile[groupId][profileId][pubId].profileIdPointed;
+            uint256 pointedTokenId = _pubByIdByGroupByProfile[profileId][groupId][pubId].profileIdPointed;
             // We validate existence here as an optimization, so validating in calling contracts is unnecessary
             if (pointedTokenId == 0) revert Errors.PublicationDoesNotExist();
 
-            uint256 pointedPubId = _groupPubByIdByProfile[groupId][profileId][pubId].pubIdPointed;
+            uint256 pointedPubId = _pubByIdByGroupByProfile[profileId][groupId][pubId].pubIdPointed;
 
-            address pointedCollectModule = _pubByIdByProfile[groupId][pointedTokenId][pointedPubId]
+            address pointedCollectModule = _pubByIdByGroupByProfile[pointedTokenId][groupId][pointedPubId]
                 .collectModule;
 
             return (pointedTokenId, pointedPubId, pointedCollectModule);

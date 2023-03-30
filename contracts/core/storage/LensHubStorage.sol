@@ -59,7 +59,7 @@ abstract contract LensHubStorage {
     );
     bytes32 internal constant GROUP_POST_WITH_SIG_TYPEHASH =
     keccak256(
-        'GroupPostWithSig(uint256 profileId,uint256 profileIdPointed,uint256 groupId,string contentURI,address collectModule,bytes collectModuleInitData,address referenceModule,bytes referenceModuleInitData,uint256 nonce,uint256 deadline)'
+        'GroupPostWithSig(uint256 profileId,uint256 groupId,string contentURI,address collectModule,bytes collectModuleInitData,address referenceModule,bytes referenceModuleInitData,uint256 nonce,uint256 deadline)'
     );
     bytes32 internal constant GROUP_COMMENT_WITH_SIG_TYPEHASH =
     keccak256(
@@ -78,7 +78,7 @@ abstract contract LensHubStorage {
     mapping(uint256 => address) internal _dispatcherByProfile;
     mapping(bytes32 => uint256) internal _profileIdByHandleHash;
     mapping(uint256 => DataTypes.ProfileStruct) internal _profileById;
-    mapping(uint256 => mapping(uint256 => DataTypes.PublicationStruct)) internal _pubByIdByProfile;
+    mapping(uint256 => mapping(uint256 => DataTypes.PublicationStruct)) internal _pubByIdByProfile; // profileId => pubId => pub
 
     mapping(address => uint256) internal _defaultProfileByAddress;
 
@@ -88,6 +88,7 @@ abstract contract LensHubStorage {
 
     // Group Pub Storage variables
     mapping(address => bool) internal _joinModuleWhitelisted;
-    mapping(uint256 => mapping(uint256 => mapping(uint256 => DataTypes.GroupPublicationStruct))) internal _pubByIdByProfileByGroup;
-
+    mapping(uint256 => DataTypes.GroupStruct) internal _groupPubById;
+    mapping(uint256 => mapping(uint256 => mapping(uint256 => DataTypes.PublicationStruct))) internal _pubByIdByGroupByProfile; // profileId => groupId => pubId => pub
+//    mapping(uint256 => mapping(uint256 => DataTypes.GroupPublicationStruct)) internal _groupPubByIdByProfile; // profileId => pubId => pub
 }

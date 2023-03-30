@@ -73,6 +73,15 @@ library DataTypes {
         string followNFTURI;
     }
 
+    struct GroupStruct {
+        uint256 profileId;
+        string contentURI;
+        address joinModule;
+        address joinNFT;
+        address collectModule;
+        address collectNFT;
+    }
+
     /**
      * @notice A struct containing data associated with each new publication.
      *
@@ -95,9 +104,10 @@ library DataTypes {
     * @notice A struct containing data associated with each new Group publications.
     *
     * @param profileIdPointed The profile token ID this publication points to, for posts, mirrors and comments.
-    * @param pubIdPointed The publication ID this publication points to, for mirrors and comments.
+    * @param pubIdPointed The publication ID this publication points to, for posts, mirrors and comments.
     * @param contentURI The URI associated with this publication.
     * @param joinModule The address of the join module associated with this publication, this exists for only Group publication.
+    * @param joinNFT The address of the joinNFT associated with this publication, only for Group.
     * @param referenceModule The address of the current reference module in use by this publication, can be empty.
     * @param collectModule The address of the collect module associated with this publication, this exists for all publication.
     * @param collectNFT The address of the collectNFT associated with this publication, if any.
@@ -105,6 +115,8 @@ library DataTypes {
     struct GroupPublicationStruct {
         uint256 profileIdPointed;
         uint256 pubIdPointed;
+        uint256 groupCreatorProfileId; // TODO: need to update doc
+        uint256 groupId;
         string contentURI;
         address joinModule;
         address joinNFT;
@@ -545,7 +557,6 @@ library DataTypes {
     * @notice A struct containing the parameters required for the `groupPost()` function.
     *
     * @param profileId The token ID of the profile publishing this post.
-    * @param profileIdPointed The profile token ID of group id publisher/creator.
     * @param groupId The group ID to publish to.
     * @param contentURI The URI to set for this new publication.
     * @param collectModule The collect module to set for this new publication.
@@ -555,7 +566,6 @@ library DataTypes {
     */
     struct GroupPostData {
         uint256 profileId;
-        uint256 profileIdPointed;
         uint256 groupId;
         string contentURI;
         address collectModule;
@@ -569,7 +579,6 @@ library DataTypes {
     * the regular `groupPost()` function, with an added EIP712Signature.
     *
     * @param profileId The token ID of the profile publishing this post.
-    * @param profileIdPointed The profile token ID of group id publisher/creator.
     * @param groupId The group ID to publish to.
     * @param contentURI The URI to set for this new publication.
     * @param collectModule The collect module to set for this new publication.
@@ -580,7 +589,6 @@ library DataTypes {
     */
     struct GroupPostWithSigData {
         uint256 profileId;
-        uint256 profileIdPointed;
         uint256 groupId;
         string contentURI;
         address collectModule;

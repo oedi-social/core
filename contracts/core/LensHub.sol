@@ -422,8 +422,8 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
             vars.contentURI,
             vars.collectModule,
             vars.collectModuleInitData,
-            vars.referenceModule,
-            vars.referenceModuleInitData
+            vars.joinModule,
+            vars.joinModuleInitData
         );
     }
     /// @inheritdoc ILensHub
@@ -444,8 +444,8 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
                             keccak256(bytes(vars.contentURI)),
                             vars.collectModule,
                             keccak256(vars.collectModuleInitData),
-                            vars.referenceModule,
-                            keccak256(vars.referenceModuleInitData),
+                            vars.joinModule,
+                            keccak256(vars.joinModuleInitData),
                             sigNonces[owner]++,
                             vars.sig.deadline
                         )
@@ -474,11 +474,10 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
     returns (uint256)
     {
         _validateCallerIsProfileOwnerOrDispatcher(vars.profileId);
-        _validationGroupIdAndCallerIsGroupMember(vars.profileId, vars.profileIdPointed, vars.groupId);
+        _validateGroupExistsAndCallerIsGroupMember(vars.profileId, vars.groupId);
         return
         _createGroupPost(
             vars.profileId,
-            vars.profileIdPointed,
             vars.groupId,
             vars.contentURI,
             vars.collectModule,
@@ -503,7 +502,6 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
                         abi.encode(
                             GROUP_POST_WITH_SIG_TYPEHASH,
                             vars.profileId,
-                            vars.profileIdPointed,
                             vars.groupId,
                             keccak256(bytes(vars.contentURI)),
                             vars.collectModule,
@@ -519,11 +517,10 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
                 vars.sig
             );
         }
-        _validationGroupIdAndCallerIsGroupMember(vars.profileId, vars.profileIdPointed, vars.groupId);
+        _validateGroupExistsAndCallerIsGroupMember(vars.profileId, vars.groupId);
         return
         _createGroupPost(
             vars.profileId,
-            vars.profileIdPointed,
             vars.groupId,
             vars.contentURI,
             vars.collectModule,
@@ -600,7 +597,7 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
     returns (uint256)
     {
         _validateCallerIsProfileOwnerOrDispatcher(vars.profileId);
-        _validationGroupIdAndCallerIsGroupMember(vars.profileId, vars.profileIdPointed, vars.groupId);
+        _validateGroupExistsAndCallerIsGroupMember(vars.profileId, vars.groupId);
         return _createGroupComment(vars);
     }
 
@@ -637,7 +634,7 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
             vars.sig
         );
     }
-    _validationGroupIdAndCallerIsGroupMember(vars.profileId, vars.profileIdPointed, vars.groupId);
+    _validateGroupExistsAndCallerIsGroupMember(vars.profileId, vars.groupId);
     return
         _createGroupComment(
             DataTypes.GroupCommentData(
@@ -716,7 +713,7 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
     returns (uint256)
     {
         _validateCallerIsProfileOwnerOrDispatcher(vars.profileId);
-        _validationGroupIdAndCallerIsGroupMember(vars.profileId, vars.profileIdPointed, vars.groupId);
+        _validateGroupExistsAndCallerIsGroupMember(vars.profileId, vars.groupId);
         return _createGroupMirror(vars);
     }
 
@@ -750,7 +747,7 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
                 vars.sig
             );
         }
-        _validationGroupIdAndCallerIsGroupMember(vars.profileId, vars.profileIdPointed, vars.groupId);
+        _validateGroupExistsAndCallerIsGroupMember(vars.profileId, vars.groupId);
         return
             _createGroupMirror(
                 DataTypes.GroupMirrorData(
@@ -1201,7 +1198,7 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
                 joinModule,
                 joinModuleData,
                 pubId,
-                _groupPubByIdByProfile,
+                _groupPubById,
                 _collectModuleWhitelisted,
                 _joinModuleWhitelisted
             );
@@ -1211,8 +1208,7 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
 
     function _createGroupPost(
         uint256 profileId,
-        uint256 profileIdPointed,
-        uint256 groupId,
+        uint256 groupId, // pubIdPointed
         string memory contentURI,
         address collectModule,
         bytes memory collectModuleData,
@@ -1224,7 +1220,6 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
             uint256 pubId = ++_profileById[profileId].pubCount;
             PublishingLogic.createGroupPost(
                 profileId,
-                profileIdPointed,
                 groupId,
                 contentURI,
                 collectModule,
@@ -1232,8 +1227,7 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
                 referenceModule,
                 referenceModuleData,
                 pubId,
-                _pubByIdByProfile,
-                _groupPubByIdByProfile,
+                _pubByIdByGroupByProfile,
                 _collectModuleWhitelisted,
                 _referenceModuleWhitelisted
             );
@@ -1276,7 +1270,7 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
                 vars,
                 pubId,
                 _profileById,
-                _groupPubByIdByProfile,
+                _pubByIdByGroupProfile,
                 _collectModuleWhitelisted,
                 _referenceModuleWhitelisted
             );
@@ -1303,7 +1297,7 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
             PublishingLogic.createGroupMirror(
                 vars,
                 pubId,
-                _pubByIdByProfileByGroup,
+                _pubByIdByGroupByProfile,
                 _referenceModuleWhitelisted
             );
             return pubId;
@@ -1359,12 +1353,24 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
         if (msg.sender != ownerOf(profileId)) revert Errors.NotProfileOwner();
     }
 
-    function _validationGroupIdAndCallerIsGroupMember(uint256 profileId, uint256 profileIdPointed, uint256 groupId) internal view {
-        address joinNFT = _pubByIdByProfileIdByGroup[groupId][profileIdPointed][groupId].joinNFT; // TODO: check if this is correct
-        address profileOwner = ownerOf(profileId);
-        if(joinNFT == address(0)) revert Errors.NoGroupMembers();
+    function _validateGroupExistsAndCallerIsGroupMember(uint256 profileId, uint256 groupId) internal view {
+        DataTypes.GroupStruct memory groupPub = _groupPubById[groupId];
+        if(groupPub.joinModule == address(0)) revert Errors.GroupDoesNotExist();
+        if(groupPub.joinNFT == address(0)) revert Errors.GroupDoesNotHaveMembers();
 
-        if (IERC721(joinNFT).balanceOf(profileOwner) != 0) revert Errors.NotGroupMember(); //a group creator also need to join Group first
+        address profileOwner = ownerOf(profileId);
+
+        if (IERC721(groupPub.joinNFT).balanceOf(profileOwner) != 0 && profileId != groupPub.profileId) revert Errors.NotGroupMember(); // group creator does not need to join Group first
+    }
+
+    function _validatePubPointedExistsAndCallerIsGroupMember(uint256 profileId, uint256 pubPointed) internal view {
+        DataTypes.GroupPublicationStruct groupPub = _groupPubByIdByProfile[profileIdPointed][groupId][pubPointed];
+        if(groupPub.joinModule != address(0)) revert Errors.CannotCommentOnGroup();
+        if(groupPub.joinNFT == address(0)) revert Errors.GroupDoesNotHaveMembers();
+
+        address profileOwner = ownerOf(profileId);
+
+        if (IERC721(groupPub.joinNFT).balanceOf(profileOwner) != 0 && profileId != profileIdPointed) revert Errors.NotGroupMember(); // group creator does not need to join Group first
     }
 
     function _validateCallerIsGovernance() internal view {
