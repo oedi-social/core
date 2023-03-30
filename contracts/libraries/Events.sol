@@ -435,6 +435,28 @@ library Events {
         bytes collectModuleData,
         uint256 timestamp
     );
+    /**
+     * @dev Emitted upon a successful collect action.
+     *
+     * @param collector The address collecting the publication.
+     * @param profileId The token ID of the profile that the collect was initiated towards, useful to differentiate mirrors.
+     * @param groupId The group's ID, in which collect is initiated.
+     * @param pubId The publication ID that the collect was initiated towards, useful to differentiate mirrors.
+     * @param rootProfileId The profile token ID of the profile whose publication is being collected.
+     * @param rootPubId The publication ID of the publication being collected.
+     * @param collectModuleData The data passed to the collect module.
+     * @param timestamp The current block timestamp.
+     */
+    event GroupCollected(
+        address indexed collector,
+        uint256 indexed profileId,
+        uint256 indexed groupId,
+        uint256 indexed pubId,
+        uint256 rootProfileId,
+        uint256 rootPubId,
+        bytes collectModuleData,
+        uint256 timestamp
+    );
 
     /**
      * @dev Emitted upon a successful follow action.

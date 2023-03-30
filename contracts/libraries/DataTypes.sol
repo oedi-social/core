@@ -488,6 +488,26 @@ library DataTypes {
     }
 
     /**
+     * @notice A struct containing the parameters required for the `groupCollectWithSig()` function. Parameters are the same as
+     * the regular `collect()` function, with the collector's (signer) address and an EIP712Signature added.
+     *
+     * @param collector The collector which is the message signer.
+     * @param profileId The token ID of the profile that published the publication to collect.
+     * @param groupId The group ID in which the publication to collect is published.
+     * @param pubId The publication to collect's publication ID.
+     * @param data The arbitrary data to pass to the collectModule if needed.
+     * @param sig The EIP712Signature struct containing the collector's signature.
+     */
+    struct GroupCollectWithSigData {
+        address collector;
+        uint256 profileId;
+        uint256 groupId;
+        uint256 pubId;
+        bytes data;
+        EIP712Signature sig;
+    }
+
+    /**
      * @notice A struct containing the parameters required for the `setProfileMetadataWithSig()` function.
      *
      * @param profileId The profile ID for which to set the metadata.

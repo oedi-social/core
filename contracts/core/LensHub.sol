@@ -909,6 +909,66 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
     }
 
     /// @inheritdoc ILensHub
+    function groupCollect(
+        uint256 profileId,
+        uint256 groupId,
+        uint256 pubId,
+        bytes calldata data
+    ) external override whenNotPaused returns (uint256) {
+        _validateGroupExistsAndCallerIsGroupMember(profileId, groupId);
+        return
+        InteractionLogic.groupCollect(
+            msg.sender,
+            profileId,
+            groupId,
+            pubId,
+            data,
+            COLLECT_NFT_IMPL,
+            _pubByIdByGroupByProfile,
+            _profileById
+        );
+    }
+
+    /// @inheritdoc ILensHub
+    function groupCollectWithSig(DataTypes.GroupCollectWithSigData calldata vars)
+        external
+        override
+        whenNotPaused
+        returns (uint256)
+    {
+        unchecked {
+            _validateRecoveredAddress(
+                _calculateDigest(
+                    keccak256(
+                        abi.encode(
+                            GROUP_COLLECT_WITH_SIG_TYPEHASH,
+                            vars.profileId,
+                            vars.groupId,
+                            vars.pubId,
+                            keccak256(vars.data),
+                            sigNonces[vars.collector]++,
+                            vars.sig.deadline
+                        )
+                    )
+                ),
+                vars.collector,
+                vars.sig
+            );
+        }
+        return
+            InteractionLogic.groupCollect(
+                vars.collector,
+                vars.profileId,
+                vars.groupId,
+                vars.pubId,
+                vars.data,
+                COLLECT_NFT_IMPL,
+                _pubByIdByGroupByProfile,
+                _profileById
+            );
+    }
+
+    /// @inheritdoc ILensHub
     function emitFollowNFTTransferEvent(
         uint256 profileId,
         uint256 followNFTId,
