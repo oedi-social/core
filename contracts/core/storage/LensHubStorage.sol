@@ -55,7 +55,7 @@ abstract contract LensHubStorage {
         );
     bytes32 internal constant GROUP_WITH_SIG_TYPEHASH =
     keccak256(
-        'GroupWithSig(uint256 profileId,string contentURI,address collectModule,bytes collectModuleInitData,address joinModule,bytes joinModuleInitData,uint256 nonce,uint256 deadline)'
+        'GroupWithSig(uint256 profileId,string contentURI,address collectModule,bytes collectModuleInitData,address joinModule,bytes joinModuleInitData,address postModule,bytes postModuleInitData,uint256 nonce,uint256 deadline)'
     );
     bytes32 internal constant GROUP_POST_WITH_SIG_TYPEHASH =
     keccak256(
@@ -88,6 +88,7 @@ abstract contract LensHubStorage {
 
     // Group Pub Storage variables
     mapping(address => bool) internal _joinModuleWhitelisted;
+    mapping(address => bool) internal _postModuleWhitelisted;
     mapping(uint256 => mapping(uint256 => mapping(uint256 => DataTypes.GroupPublicationStruct))) internal _pubByIdByProfileByGroup;
 
 }

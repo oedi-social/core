@@ -108,6 +108,7 @@ library DataTypes {
         string contentURI;
         address joinModule;
         address joinNFT;
+        address postModule; // TODO: add in CreateGroupData struct
         address referenceModule;
         address collectModule;
         address collectNFT;
@@ -519,6 +520,8 @@ library DataTypes {
         bytes collectModuleInitData;
         address joinModule;
         bytes joinModuleInitData;
+        address postModule;
+        bytes postModuleInitData;
     }
     /**
     * @notice A struct containing the parameters required for the 'groupWithSig()' function. Parameters are the same as
@@ -539,6 +542,8 @@ library DataTypes {
         bytes collectModuleInitData;
         address joinModule;
         bytes joinModuleInitData;
+        address postModule;
+        bytes postModuleInitData;
         EIP712Signature sig;
     }
     /**

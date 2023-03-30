@@ -38,6 +38,7 @@ library Errors {
     error InvalidParameter();
     error NoGroupMembers();
     error NotGroupMember();
+    error PostModuleNotWhitelisted();
 
     // Module Errors
     error InitParamsInvalid();

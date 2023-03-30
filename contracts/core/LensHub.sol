@@ -422,8 +422,10 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
             vars.contentURI,
             vars.collectModule,
             vars.collectModuleInitData,
-            vars.referenceModule,
-            vars.referenceModuleInitData
+            vars.joinModule,
+            vars.joinModuleInitData,
+            vars.postModule,
+            vars.postModuleInitData
         );
     }
     /// @inheritdoc ILensHub
@@ -444,8 +446,10 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
                             keccak256(bytes(vars.contentURI)),
                             vars.collectModule,
                             keccak256(vars.collectModuleInitData),
-                            vars.referenceModule,
-                            keccak256(vars.referenceModuleInitData),
+                            vars.joinModule,
+                            keccak256(vars.joinModuleInitData),
+                            vars.postModule,
+                            keccak256(vars.postModuleInitData),
                             sigNonces[owner]++,
                             vars.sig.deadline
                         )
@@ -461,8 +465,10 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
             vars.contentURI,
             vars.collectModule,
             vars.collectModuleInitData,
-            vars.referenceModule,
-            vars.referenceModuleInitData
+            vars.joinModule,
+            vars.joinModuleInitData,
+            vars.postModule,
+            vars.postModuleInitData
         );
     }
 
@@ -1189,7 +1195,9 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
         address collectModule,
         bytes memory collectModuleData,
         address joinModule,
-        bytes memory joinModuleData
+        bytes memory joinModuleData,
+        address postModule,
+        bytes memory postModuleData
     ) internal returns (uint256) {
         unchecked {
             uint256 pubId = ++_profileById[profileId].pubCount;
@@ -1200,10 +1208,13 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
                 collectModuleData,
                 joinModule,
                 joinModuleData,
+                postModule,
+                postModuleData,
                 pubId,
-                _groupPubByIdByProfile,
+                _pubByIdByProfileByGroup,
                 _collectModuleWhitelisted,
-                _joinModuleWhitelisted
+                _joinModuleWhitelisted,
+                _postModuleWhitelisted
             );
             return pubId;
         }

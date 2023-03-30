@@ -199,13 +199,18 @@ library PublishingLogic {
         bytes memory referenceModuleInitData,
         uint256 pubId,
         mapping(uint256 => mapping(uint256 => DataTypes.GroupPublicationStruct))
-            storage _groupPubByIdByProfile,
+            storage _pubByIdByProfileByGroup,
         mapping(address => bool) storage _collectModuleWhitelisted,
         mapping(address => bool) storage _referenceModuleWhitelisted
     ) external {
-        _groupPubByIdByProfile[profileId][pubId].contentURI = contentURI;
-        _groupPubByIdByProfile[profileId][pubId].profileIdPointed = profileIdPointed;
-        _groupPubByIdByProfile[profileId][pubId].pubIdPointed = groupId;
+        _pubByIdByProfileByGroup[groupId][profileId][pubId].contentURI = contentURI;
+        _pubByIdByProfileByGroup[groupId][profileId][pubId].profileIdPointed = profileIdPointed;
+        _pubByIdByProfileByGroup[groupId][profileId][pubId].pubIdPointed = groupId;
+
+        address postModule = _pubByIdByProfileByGroup[groupId][profileId][pubId].postModule;
+        // TODO: trigger postModule.processPost
+        /** IPostModule(postModule)
+                .processPost(profileId, profileIdPointed, groupId, pubId, contentURI); */
 
         // Collect module initialization
         bytes memory collectModuleReturnData = _initPubCollectModule(
@@ -263,17 +268,20 @@ library PublishingLogic {
         bytes memory collectModuleInitData,
         address joinModule,
         bytes memory joinModuleInitData,
+        address postModule,
+        bytes memory postModuleInitData,
         uint256 pubId,
-        mapping(uint256 => mapping(uint256 => DataTypes.PublicationStruct))
-            storage _groupPubByIdByProfile,
+        mapping(uint256 => mapping(uint256 => DataTypes.GroupPublicationStruct))
+            storage _pubByIdByProfileByGroup,
         mapping(address => bool) storage _collectModuleWhitelisted,
-        mapping(address => bool) storage _joinModuleWhitelisted
+        mapping(address => bool) storage _joinModuleWhitelisted,
+        mapping(address => bool) storage _postModuleWhitelisted
     ) external {
         // TODO: instead of creating separate Group Pub, we should fill the same Pub struct with the group data and new data only should be stored on new Group struct
             // This will allow us to use the same functions for both group and profile publications
             // disadvantage is that we will have to check if the publication is a group or profile publication ?
         // TODO: need to replace _groupPubByIdByProfile with _pubByIdByProfileIdByGroup [HIGH]
-        _groupPubByIdByProfile[profileId][pubId].contentURI = contentURI;
+        _pubByIdByProfileByGroup[profileId][pubId].contentURI = contentURI;
 
         // Collect module initialization
         bytes memory collectModuleReturnData = _initPubCollectModule(
@@ -293,6 +301,16 @@ library PublishingLogic {
             joinModuleInitData,
             _groupPubByIdByProfile,
             _joinModuleWhitelisted
+        );
+        // TODO: need to define post Module interface [HIGH]
+        // Post module initialization
+        bytes memory joinModuleReturnData = _initPubPostModule(
+            profileId,
+            pubId,
+            postModule,
+            postModuleInitData,
+            _pubByIdByProfileByGroup,
+            _postModuleWhitelisted
         );
 
         emit Events.GroupCreated(
@@ -606,6 +624,23 @@ library PublishingLogic {
             IFollowModule(joinModule).initializeFollowModule(
                 groupId, // using groupId as join module should be associated with group not profile
                 joinModuleInitData
+            );
+    }
+    function _initPubPostModule(
+        uint256 profileId,
+        uint256 groupId, // aka pubId
+        address postModule,
+        bytes memory postModuleInitData,
+        mapping(uint256 => DataTypes.GroupPubIdStruct) storage _pubIdByProfileByGroup,
+        mapping(address => bool) storage _postModuleWhitelisted
+    ) private returns (bytes memory) {
+        if (!_postModuleWhitelisted[postModule]) revert Errors.PostModuleNotWhitelisted();
+        _pubIdByProfileByGroup[groupId][profileId][0].postModule = postModule;
+        return
+        // using FollowModule interface to initialize join module
+            IPostModule(postModule).initializePostModule(
+                groupId, // using groupId as post module should be associated with group not profile
+                postModuleInitData
             );
     }
 
