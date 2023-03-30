@@ -34,8 +34,11 @@ library DataTypes {
     enum PubType {
         Post,
         Group,
+        PostInGroup,
         Comment,
+        CommentInGroup,
         Mirror,
+        MirrorInGroup,
         Nonexistent
     }
 
