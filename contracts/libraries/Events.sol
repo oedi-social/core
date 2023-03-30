@@ -485,6 +485,21 @@ library Events {
     );
 
     /**
+     * @dev Emitted upon a successful join action.
+     *
+     * @param joiner The address joining the given groups.
+     * @param groupIds The token ID array of the groups being followed.
+     * @param groupModuleDatas The array of data parameters passed to each join module.
+     * @param timestamp The current block timestamp.
+     */
+    event Joined(
+        address indexed joiner,
+        uint256[] groupIds,
+        bytes[] joinModuleDatas,
+        uint256 timestamp
+    );
+
+    /**
      * @dev Emitted via callback when a followNFT is transferred.
      *
      * @param profileId The token ID of the profile associated with the followNFT being transferred.

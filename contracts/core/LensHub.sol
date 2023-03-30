@@ -805,7 +805,7 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
     /// ***************************************
 
     /// @inheritdoc ILensHub
-    function follow(uint256[] calldata profileIds, bytes[] calldata datas) // TODO - implement join Group
+    function follow(uint256[] calldata profileIds, bytes[] calldata datas)
         external
         override
         whenNotPaused
@@ -861,6 +861,64 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
                 _profileById,
                 _profileIdByHandleHash
             );
+    }
+
+    /// @inheritdoc ILensHub
+    function join(uint256[] calldata groupIds, bytes[] calldata datas) // TODO - implement join Group
+    external
+    override
+    whenNotPaused
+    returns (uint256[] memory)
+    {
+        return
+        InteractionLogic.join(
+            msg.sender,
+            groupIds,
+            datas,
+            _groupPubById
+        );
+    }
+
+    /// @inheritdoc ILensHub
+    function followWithSig(DataTypes.FollowWithSigData calldata vars)
+    external
+    override
+    whenNotPaused
+    returns (uint256[] memory)
+    {
+        uint256 dataLength = vars.datas.length;
+        bytes32[] memory dataHashes = new bytes32[](dataLength);
+        for (uint256 i = 0; i < dataLength; ) {
+            dataHashes[i] = keccak256(vars.datas[i]);
+        unchecked {
+            ++i;
+        }
+        }
+    unchecked {
+        _validateRecoveredAddress(
+            _calculateDigest(
+                keccak256(
+                    abi.encode(
+                        FOLLOW_WITH_SIG_TYPEHASH,
+                        keccak256(abi.encodePacked(vars.profileIds)),
+                        keccak256(abi.encodePacked(dataHashes)),
+                        sigNonces[vars.follower]++,
+                        vars.sig.deadline
+                    )
+                )
+            ),
+            vars.follower,
+            vars.sig
+        );
+    }
+        return
+        InteractionLogic.follow(
+            vars.follower,
+            vars.profileIds,
+            vars.datas,
+            _profileById,
+            _profileIdByHandleHash
+        );
     }
 
     /// @inheritdoc ILensHub

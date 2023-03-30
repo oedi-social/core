@@ -78,6 +78,56 @@ library InteractionLogic {
     }
 
     /**
+ * @notice Join the given profiles, executing the necessary logic and module calls before minting the follow
+     * NFT(s) to the follower.
+     *
+     * @param follower The address executing the follow.
+     * @param profileIds The array of profile token IDs to follow.
+     * @param followModuleDatas The array of follow module data parameters to pass to each profile's follow module.
+     * @param _profileById A pointer to the storage mapping of profile structs by profile ID.
+     * @param _profileIdByHandleHash A pointer to the storage mapping of profile IDs by handle hash.
+     *
+     * @return uint256[] An array of integers representing the minted follow NFTs token IDs.
+     */
+    function join(
+        address joiner,
+        uint256[] calldata groupIds,
+        bytes[] calldata joinModuleDatas,
+        mapping(uint256 => DataTypes.GroupStruct) storage _groupPubById
+    ) external returns (uint256[] memory) {
+        if (groupIds.length != joinModuleDatas.length) revert Errors.ArrayMismatch();
+        uint256[] memory tokenIds = new uint256[](groupIds.length);
+        for (uint256 i = 0; i < groupIds.length; ) {
+            string memory profileId = _groupById[groupIds[i]].profileId;
+            if (profileId != 0)
+                revert Errors.GroupDoesNotExist();
+
+            address joinModule = _groupPubById[groupIds[i]].joinModule;
+            address joinNFT = _groupPubById[groupIds[i]].joinNFT;
+
+            if (joinNFT == address(0)) {
+                joinNFT = _deployJoinNFT(groupIds[i]); // TODO
+                _groupPubById[groupIds[i]].joinNFT = joinNFT;
+            }
+
+            tokenIds[i] = IFollowNFT(joinNFT).mint(joiner);
+
+            if (joinModule != address(0)) {
+                IFollowModule(joinModule).processJoin( // TODO: IFollowModule or IJoinModule? impl ? processFollow -> processJoin ?
+                    joiner,
+                    groupIds[i],
+                    joinModuleDatas[i]
+                );
+            }
+        unchecked {
+            ++i;
+        }
+        }
+        emit Events.Joined(joiner, groupIds, joinModuleDatas, block.timestamp);
+        return tokenIds;
+    }
+
+    /**
      * @notice Collects the given publication, executing the necessary logic and module call before minting the
      * collect NFT to the collector.
      *
