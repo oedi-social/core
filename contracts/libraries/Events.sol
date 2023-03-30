@@ -86,7 +86,18 @@ library Events {
         bool indexed whitelisted,
         uint256 timestamp
     );
-    // TODO: Add JoinModuleWhitelisted event here
+    /**
+    * @dev Emitted when a join module is added to or removed from the whitelist.
+     *
+     * @param joinModule The address of the join module.
+     * @param whitelisted Whether or not the join module is being added to the whitelist.
+     * @param timestamp The current block timestamp.
+     */
+    event JoinModuleWhitelisted(
+        address indexed joinModule,
+        bool indexed whitelisted,
+        uint256 timestamp
+    );
 
     /**
      * @dev Emitted when a reference module is added to or removed from the whitelist.

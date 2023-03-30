@@ -91,6 +91,15 @@ interface ILensHub {
     function whitelistCollectModule(address collectModule, bool whitelist) external;
 
     /**
+     * @notice Adds or removes a join module from the whitelist. This function can only be called by the current
+     * governance address.
+     *
+     * @param joinModule The join module contract address to add or remove from the whitelist.
+     * @param whitelist Whether or not the join module should be whitelisted.
+     */
+    function whitelistJoinModule(address joinModule, bool whitelist) external;
+
+    /**
      * @notice Creates a profile with the specified parameters, minting a profile NFT to the given recipient. This
      * function must be called by a whitelisted profile creator.
      *

@@ -136,6 +136,16 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
         emit Events.CollectModuleWhitelisted(collectModule, whitelist, block.timestamp);
     }
 
+    /// @inheritdoc ILensHub
+    function whitelistJoinModule(address joinModule, bool whitelist)
+        external
+        override
+        onlyGov
+    {
+        _joinModuleWhitelisted[joinModule] = whitelist;
+        emit Events.JoinModuleWhitelisted(joinModule, whitelist, block.timestamp);
+    }
+
     /// *********************************
     /// *****PROFILE OWNER FUNCTIONS*****
     /// *********************************
