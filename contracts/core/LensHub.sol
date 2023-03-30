@@ -795,7 +795,7 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
     /// ***************************************
 
     /// @inheritdoc ILensHub
-    function follow(uint256[] calldata profileIds, bytes[] calldata datas)
+    function follow(uint256[] calldata profileIds, bytes[] calldata datas) // TODO - implement join Group
         external
         override
         whenNotPaused
@@ -1045,6 +1045,16 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
     }
 
     /// @inheritdoc ILensHub
+    function isJoinModuleWhitelisted(address joinModule)
+        external
+        view
+        override
+        returns (bool)
+    {
+        return _joinModuleWhitelisted[collectModule];
+    }
+
+    /// @inheritdoc ILensHub
     function getGovernance() external view override returns (address) {
         return _governance;
     }
@@ -1122,6 +1132,18 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
     }
 
     /// @inheritdoc ILensHub
+    function getGroupPubPointer(uint256 profileId, uint256 groupId, uint256 pubId)
+        external
+        view
+        override
+        returns (uint256, uint256)
+    {
+        uint256 profileIdPointed = _pubByIdByGroupByProfile[profileId][groupId][pubId].profileIdPointed;
+        uint256 pubIdPointed = _pubByIdByGroupByProfile[profileId][groupId][pubId].pubIdPointed;
+        return (profileIdPointed, pubIdPointed);
+    }
+
+    /// @inheritdoc ILensHub
     function getContentURI(uint256 profileId, uint256 pubId)
         external
         view
@@ -1163,6 +1185,16 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
     }
 
     /// @inheritdoc ILensHub
+    function getGroupPub(uint256 profileId, uint256 groupId, uint256 pubId)
+        external
+        view
+        override
+        returns (DataTypes.PublicationStruct memory)
+    {
+        return _pubByIdByGroupByProfile[profileId][groupId][pubId];
+    }
+
+    /// @inheritdoc ILensHub
     function getPubType(uint256 profileId, uint256 pubId)
         external
         view
@@ -1177,6 +1209,25 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
             return DataTypes.PubType.Post;
         } else {
             return DataTypes.PubType.Comment;
+        }
+    }
+    /// @inheritdoc ILensHub
+    function getGroupPubType(uint256 profileId, uint256 groupId, uint256 pubId)
+        external
+        view
+        override
+        returns (DataTypes.PubType)
+    {
+        if ((pubId == 0 && _groupPubById[groupId].profileId == address(0)) || _pubByIdByGroupByProfile[profileId][groupId][pubId].pubIdPointed == 0) {
+            return DataTypes.PubType.Nonexistent;
+        } else if (pubId == 0 && _groupPubById[groupId].profileId != address(0)) {
+            return DataTypes.PubType.Group;
+        } else if (_pubByIdByGroupByProfile[profileId][groupId][pubId].collectModule == address(0)) {
+            return DataTypes.PubType.MirrorInGroup;
+        } else if (_pubByIdByGroupByProfile[profileId][pubId].profileIdPointed == 0) {
+            return DataTypes.PubType.PostInGroup;
+        } else {
+            return DataTypes.PubType.CommentInGroup;
         }
     }
 
