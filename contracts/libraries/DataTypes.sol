@@ -76,6 +76,16 @@ library DataTypes {
         string followNFTURI;
     }
 
+    /**
+     * @notice A struct containing data associated with each new group.
+     *
+     * @param profileId The profile token ID this group is associated with.
+     * @param contentURI The URI associated with this group.
+     * @param joinModule The address of the current join module in use by this group, can be empty.
+     * @param joinNFT The address of the joinNFT associated with this group, if any.
+     * @param collectModule The address of the collect module associated with this group, this exists for all groups.
+     * @param collectNFT The address of the collectNFT associated with this group, if any.
+     */
     struct GroupStruct {
         uint256 profileId;
         string contentURI;
@@ -99,30 +109,6 @@ library DataTypes {
         uint256 profileIdPointed;
         uint256 pubIdPointed;
         string contentURI;
-        address referenceModule;
-        address collectModule;
-        address collectNFT;
-    }
-    /**
-    * @notice A struct containing data associated with each new Group publications.
-    *
-    * @param profileIdPointed The profile token ID this publication points to, for posts, mirrors and comments.
-    * @param pubIdPointed The publication ID this publication points to, for posts, mirrors and comments.
-    * @param contentURI The URI associated with this publication.
-    * @param joinModule The address of the join module associated with this publication, this exists for only Group publication.
-    * @param joinNFT The address of the joinNFT associated with this publication, only for Group.
-    * @param referenceModule The address of the current reference module in use by this publication, can be empty.
-    * @param collectModule The address of the collect module associated with this publication, this exists for all publication.
-    * @param collectNFT The address of the collectNFT associated with this publication, if any.
-    */
-    struct GroupPublicationStruct {
-        uint256 profileIdPointed;
-        uint256 pubIdPointed;
-        uint256 groupCreatorProfileId; // TODO: need to update doc
-        uint256 groupId;
-        string contentURI;
-        address joinModule;
-        address joinNFT;
         address referenceModule;
         address collectModule;
         address collectNFT;
