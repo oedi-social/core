@@ -62,7 +62,7 @@ library Helpers {
      * @param groupId The group ID of the group that has published the given publication.
      * @param profileId The token ID of the profile that published the given publication.
      * @param pubId The publication ID of the given publication.
-     * @param _groupPubByIdByProfile A pointer to the storage mapping of publications by pubId by profile ID.
+     * @param _pubByIdByGroupByProfile A pointer to the storage mapping of publications by pubId by group ID by profile ID.
      *
      * @return tuple First, the pointed publication's publishing profile ID, second, the pointed publication's ID, and third, the
      * pointed publication's collect module. If the passed publication is not a mirror, this returns the given publication.

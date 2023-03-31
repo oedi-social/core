@@ -42,7 +42,6 @@ library Errors {
     error GroupDoesNotHaveMembers();
     error NotGroupMember();
     error CannotCommentOnGroup();
-    error GroupDoesNotExist();
 
     // Module Errors
     error InitParamsInvalid();

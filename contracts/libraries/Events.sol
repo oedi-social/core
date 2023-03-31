@@ -258,7 +258,6 @@ library Events {
     * @dev Emitted when a post is published in a group.
     *
     * @param profileId The profile's token ID, which is publishing the post.
-    * @param profileIdPointed The profile's token ID, which is the group's creator.
     * @param groupId The group's ID, in which post is published.
     * @param pubId The new publication's ID.
     * @param contentURI The URI mapped to this new publication.
@@ -272,9 +271,8 @@ library Events {
     */
     event PostPublishedInGroup(
         uint256 indexed profileId,
-        uint256 indexed profileIdPointed,
         uint256 indexed groupId,
-        uint256 indexed pubId,
+        uint256 pubId,
         string contentURI,
         address collectModule,
         bytes collectModuleReturnData,
@@ -475,7 +473,7 @@ library Events {
         address indexed collector,
         uint256 indexed profileId,
         uint256 indexed groupId,
-        uint256 indexed pubId,
+        uint256 pubId,
         uint256 rootProfileId,
         uint256 rootPubId,
         bytes collectModuleData,
@@ -502,7 +500,7 @@ library Events {
      *
      * @param joiner The address joining the given groups.
      * @param groupIds The token ID array of the groups being followed.
-     * @param groupModuleDatas The array of data parameters passed to each join module.
+     * @param joinModuleDatas The array of data parameters passed to each join module.
      * @param timestamp The current block timestamp.
      */
     event Joined(

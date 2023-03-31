@@ -471,8 +471,8 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
             vars.contentURI,
             vars.collectModule,
             vars.collectModuleInitData,
-            vars.referenceModule,
-            vars.referenceModuleInitData
+            vars.joinModule,
+            vars.joinModuleInitData
         );
     }
 
@@ -880,48 +880,6 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
     }
 
     /// @inheritdoc ILensHub
-    function followWithSig(DataTypes.FollowWithSigData calldata vars)
-    external
-    override
-    whenNotPaused
-    returns (uint256[] memory)
-    {
-        uint256 dataLength = vars.datas.length;
-        bytes32[] memory dataHashes = new bytes32[](dataLength);
-        for (uint256 i = 0; i < dataLength; ) {
-            dataHashes[i] = keccak256(vars.datas[i]);
-        unchecked {
-            ++i;
-        }
-        }
-    unchecked {
-        _validateRecoveredAddress(
-            _calculateDigest(
-                keccak256(
-                    abi.encode(
-                        FOLLOW_WITH_SIG_TYPEHASH,
-                        keccak256(abi.encodePacked(vars.profileIds)),
-                        keccak256(abi.encodePacked(dataHashes)),
-                        sigNonces[vars.follower]++,
-                        vars.sig.deadline
-                    )
-                )
-            ),
-            vars.follower,
-            vars.sig
-        );
-    }
-        return
-        InteractionLogic.follow(
-            vars.follower,
-            vars.profileIds,
-            vars.datas,
-            _profileById,
-            _profileIdByHandleHash
-        );
-    }
-
-    /// @inheritdoc ILensHub
     function collect(
         uint256 profileId,
         uint256 pubId,
@@ -1119,7 +1077,7 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
         override
         returns (bool)
     {
-        return _joinModuleWhitelisted[collectModule];
+        return _joinModuleWhitelisted[joinModule];
     }
 
     /// @inheritdoc ILensHub
@@ -1286,13 +1244,13 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
         override
         returns (DataTypes.PubType)
     {
-        if ((pubId == 0 && _groupPubById[groupId].profileId == address(0)) || _pubByIdByGroupByProfile[profileId][groupId][pubId].pubIdPointed == 0) {
+        if ((pubId == 0 && _groupPubById[groupId].profileId == 0) || _pubByIdByGroupByProfile[profileId][groupId][pubId].pubIdPointed == 0) {
             return DataTypes.PubType.Nonexistent;
-        } else if (pubId == 0 && _groupPubById[groupId].profileId != address(0)) {
+        } else if (pubId == 0 && _groupPubById[groupId].profileId != 0) {
             return DataTypes.PubType.Group;
         } else if (_pubByIdByGroupByProfile[profileId][groupId][pubId].collectModule == address(0)) {
             return DataTypes.PubType.MirrorInGroup;
-        } else if (_pubByIdByGroupByProfile[profileId][pubId].profileIdPointed == 0) {
+        } else if (_pubByIdByGroupByProfile[profileId][groupId][pubId].profileIdPointed == 0) {
             return DataTypes.PubType.PostInGroup;
         } else {
             return DataTypes.PubType.CommentInGroup;
@@ -1449,7 +1407,7 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
                 vars,
                 pubId,
                 _profileById,
-                _pubByIdByGroupProfile,
+                _pubByIdByGroupByProfile,
                 _collectModuleWhitelisted,
                 _referenceModuleWhitelisted
             );
@@ -1539,17 +1497,7 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
 
         address profileOwner = ownerOf(profileId);
 
-        if (IERC721(groupPub.joinNFT).balanceOf(profileOwner) != 0 && profileId != groupPub.profileId) revert Errors.NotGroupMember(); // group creator does not need to join Group first
-    }
-
-    function _validatePubPointedExistsAndCallerIsGroupMember(uint256 profileId, uint256 pubPointed) internal view {
-        DataTypes.GroupPublicationStruct groupPub = _groupPubByIdByProfile[profileIdPointed][groupId][pubPointed];
-        if(groupPub.joinModule != address(0)) revert Errors.CannotCommentOnGroup();
-        if(groupPub.joinNFT == address(0)) revert Errors.GroupDoesNotHaveMembers();
-
-        address profileOwner = ownerOf(profileId);
-
-        if (IERC721(groupPub.joinNFT).balanceOf(profileOwner) != 0 && profileId != profileIdPointed) revert Errors.NotGroupMember(); // group creator does not need to join Group first
+        if (IERC721Enumerable(groupPub.joinNFT).balanceOf(profileOwner) != 0 && profileId != groupPub.profileId) revert Errors.NotGroupMember(); // group creator does not need to join Group first
     }
 
     function _validateCallerIsGovernance() internal view {

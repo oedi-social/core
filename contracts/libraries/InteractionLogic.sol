@@ -81,11 +81,10 @@ library InteractionLogic {
  * @notice Join the given profiles, executing the necessary logic and module calls before minting the follow
      * NFT(s) to the follower.
      *
-     * @param follower The address executing the follow.
-     * @param profileIds The array of profile token IDs to follow.
-     * @param followModuleDatas The array of follow module data parameters to pass to each profile's follow module.
-     * @param _profileById A pointer to the storage mapping of profile structs by profile ID.
-     * @param _profileIdByHandleHash A pointer to the storage mapping of profile IDs by handle hash.
+     * @param joiner The address executing the join.
+     * @param groupIds The array of group IDs to join.
+     * @param joinModuleDatas The array of join module data parameters to pass to each group's follow module.
+     * @param _groupPubById A pointer to the storage mapping of group structs by group ID.
      *
      * @return uint256[] An array of integers representing the minted follow NFTs token IDs.
      */
@@ -98,7 +97,7 @@ library InteractionLogic {
         if (groupIds.length != joinModuleDatas.length) revert Errors.ArrayMismatch();
         uint256[] memory tokenIds = new uint256[](groupIds.length);
         for (uint256 i = 0; i < groupIds.length; ) {
-            string memory profileId = _groupById[groupIds[i]].profileId;
+            uint256 profileId = _groupPubById[groupIds[i]].profileId;
             if (profileId != 0)
                 revert Errors.GroupDoesNotExist();
 
@@ -113,7 +112,7 @@ library InteractionLogic {
             tokenIds[i] = IFollowNFT(joinNFT).mint(joiner);
 
             if (joinModule != address(0)) {
-                IFollowModule(joinModule).processJoin( // TODO: IFollowModule or IJoinModule? impl ? processFollow -> processJoin ?
+                IFollowModule(joinModule).processFollow( // TODO: IFollowModule or IJoinModule? impl ? processFollow -> processJoin ?
                     joiner,
                     groupIds[i],
                     joinModuleDatas[i]
@@ -198,12 +197,12 @@ library InteractionLogic {
      * @param pubId The publication ID of the publication being collected.
      * @param collectModuleData The data to pass to the publication's collect module.
      * @param collectNFTImpl The address of the collect NFT implementation, which has to be passed because it's an immutable in the hub.
-     * @param _pubByIdByProfile A pointer to the storage mapping of publications by pubId by profile ID.
+     * @param _pubByIdByGroupByProfile A pointer to the storage mapping of publications by pubId by group ID by profile ID.
      * @param _profileById A pointer to the storage mapping of profile structs by profile ID.
      *
      * @return uint256 An integer representing the minted token ID.
      */
-    function groupCollect(
+    function groupCollect( // TODO: collecting a group itself should be a different function
         address collector,
         uint256 profileId,
         uint256 groupId,

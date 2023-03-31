@@ -126,6 +126,20 @@ interface ILensHub {
     function group(DataTypes.GroupData calldata vars) external returns (uint256);
 
     /**
+     * @notice Creates a group via signature with the specified parameters
+     *
+     * @param vars A GroupWithSigData struct containing the following params:
+    *       profileId: The token ID of the profile to publish/create the group.
+    *       contentURI: The URI to set for this group.
+    *       collectModule: The collect module to set for this group.
+    *       collectModuleInitData: The data to pass to the collect module's initialization.
+    *       joinModule: The join module to set for this group.
+    *       joinModuleInitData: The data to pass to the join module's initialization.
+    *       sig: The EIP712 signature.
+     */
+    function groupWithSig(DataTypes.GroupWithSigData calldata vars) external returns (uint256);
+
+    /**
      * @notice Sets the mapping between wallet and its main profile identity.
      *
      * @param profileId The token ID of the profile to set as the main profile identity.
