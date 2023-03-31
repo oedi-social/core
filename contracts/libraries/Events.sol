@@ -412,6 +412,19 @@ library Events {
     );
 
     /**
+     * @dev Emitted when a joinNFT clone is deployed using a lazy deployment pattern.
+     *
+     * @param groupId The group ID of the group to which this joinNFT is associated.
+     * @param joinNFT The address of the newly deployed joinNFT clone.
+     * @param timestamp The current block timestamp.
+     */
+    event JoinNFTDeployed(
+        uint256 indexed groupId,
+        address indexed joinNFT,
+        uint256 timestamp
+    );
+
+    /**
      * @dev Emitted when a collectNFT clone is deployed using a lazy deployment pattern.
      *
      * @param profileId The publisher's profile token ID.

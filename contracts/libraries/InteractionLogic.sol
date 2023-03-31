@@ -106,7 +106,7 @@ library InteractionLogic {
             address joinNFT = _groupPubById[groupIds[i]].joinNFT;
 
             if (joinNFT == address(0)) {
-                joinNFT = _deployJoinNFT(groupIds[i]); // TODO
+                joinNFT = _deployJoinNFT(groupIds[i]);
                 _groupPubById[groupIds[i]].joinNFT = joinNFT;
             }
 
@@ -271,6 +271,24 @@ library InteractionLogic {
         emit Events.FollowNFTDeployed(profileId, followNFT, block.timestamp);
 
         return followNFT;
+    }
+
+    /**
+     * @notice Deploys the given group's Join NFT contract.
+     *
+     * @param groupId The group ID of the group which Join NFT should be deployed.
+     *
+     * @return address The address of the deployed Join NFT contract.
+     */
+    function _deployJoinNFT(uint256 groupId) private returns (address) {
+        bytes memory functionData = abi.encodeWithSelector(
+            IFollowNFT.initialize.selector,
+            groupId
+        );
+        address joinNFT = address(new FollowNFTProxy(functionData)); // TODO: change to JoinNFTProxy, ans: what about keep it same as we're going to use IFollowNFT interface as join ?
+        emit Events.JoinNFTDeployed(groupId, joinNFT, block.timestamp);
+
+        return joinNFT;
     }
 
     /**

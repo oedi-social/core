@@ -329,6 +329,20 @@ interface ILensHub {
         returns (uint256[] memory);
 
     /**
+     * @notice Joins the given groups, executing each group's join module logic (if any) and minting joinNFTs to the caller.
+     *
+     * NOTE: Both the `groupIds` and `datas` arrays must be of the same length, regardless if the profiles do not have a follow module set.
+     *
+     * @param groupIds The group ID array of the groups to join.
+     * @param datas The arbitrary data array to pass to the join module for each group if needed.
+     *
+     * @return uint256[] An array of integers representing the minted join NFTs token IDs.
+     */
+    function join(uint256[] calldata groupIds, bytes[] calldata datas)
+        external
+        returns (uint256[] memory);
+
+    /**
      * @notice Follows a given profile via signature with the specified parameters.
      *
      * @param vars A FollowWithSigData struct containing the regular parameters as well as the signing follower's address

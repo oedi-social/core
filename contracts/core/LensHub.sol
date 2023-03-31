@@ -864,7 +864,7 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
     }
 
     /// @inheritdoc ILensHub
-    function join(uint256[] calldata groupIds, bytes[] calldata datas) // TODO - implement join Group
+    function join(uint256[] calldata groupIds, bytes[] calldata datas)
     external
     override
     whenNotPaused
