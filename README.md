@@ -1,41 +1,6 @@
-```                                                                                                                       
-     &&&&&                        &&&&&&&&&&&&&&&&&&&&&&&&     &&&&&&&&&&              &&&&&         /&&&&&&&&&&&&&&&&&           
-     &&&&&                        &&&&&&&&&&&&&&&&&&&&&&&&     &&&&  &&&&&             &&&&&       &&&&&&(        .&&&&&&*        
-     &&&&&                        &&&&&                        &&&&   &&&&&            &&&&&      &&&&/               &&&&&       
-     &&&&&                        &&&&&                        &&&&    &&&&&           &&&&&     &&&&&                 &&&&,      
-     &&&&&                        &&&&&                        &&&&     &&&&&          &&&&&     &&&&&                 &&&&&      
-     &&&&&                        &&&&&                        &&&&      &&&&&         &&&&&      &&&&&&                          
-     &&&&&                        &&&&&                        &&&&       &&&&%        &&&&&        &&&&&&&&&&&                   
-     &&&&&                        &&&&&&&&&&&&&&&&&&&&         &&&&        &&&&/       &&&&&             &&&&&&&&&&&&&&           
-     &&&&&                        &&&&&                        &&&&         &&&&*      &&&&&                     ,&&&&&&&&        
-     &&&&&                        &&&&&                        &&&&          &&&&      &&&&&                          (&&&&&      
-     &&&&&                        &&&&&                        &&&&           &&&&     &&&&&    &&&&&                   &&&&      
-     &&&&&                        &&&&&                        &&&&            &&&&    &&&&&     &&&&                   &&&&      
-     &&&&&                        &&&&&                        &&&&            *&&&&   &&&&&     /&&&&&                &&&&&      
-     &&&&&&&&&&&&&&&&&&&&&&&&&    &&&&&&&&&&&&&&&&&&&&&&&&     &&&&             (&&&&  &&&&&       &&&&&&&         &&&&&&&        
-     &&&&&&&&&&&&&&&&&&&&&&&&&    &&&&&&&&&&&&&&&&&&&&&&&&     &&&&              %&&&&&&&&&&          &&&&&&&&&&&&&&&&&,          
-                                                                                                                                  
-                                                                                                                                  
-                                                                                                                                  
+# Palm Protocol
 
-                  _( )_      _                  wWWWw   _                        _( )_      _                  wWWWw   _       
-      @@@@       (_   _)    ( )     _     @@@@  (___) _( )_          @@@@       (_   _)    ( )     _     @@@@  (___) _( )_     
-     @@()@@ wWWWw  (_)\     ( )   _( )_  @@()@@   Y  (_   _)        @@()@@ wWWWw  (_)\     ( )   _( )_  @@()@@   Y  (_   _)    
-      @@@@  (___)      |/   ( )  (_____)  @@@@   \|/   (_)\          @@@@  (___)      |/   ( )  (_____)  @@@@   \|/   (_)\      
-       /      Y       \|    (_)     |     \|      |/       |          /      Y       \|    (_)     |     \|      |/      |     
-    \ |      \|/       | / \ | /   \|/      |/    \       \|/      \ |      \|/       | / \ | /   \|/      |/    \       \|/   
-      |       |        |     |      |       |     |        |         |       |        |     |      |       |     |        |    
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   _//|\_     |        |\ _//|\_   /|\      |\_   |\___    |\     _//|\_     |        |\ _//|\_   /|\      |\_   |\___    |\   
-      | \_/  / \__    / \_   |        \   _/      |       _|         | \_/  / \__    / \_   |        \   _/      |       _|    
-     /|\_  _/       _/\       \__     /\_        / \_      |_       /|\_  _/       _/\       \__     /\_        / \_      |_    
-    / |     |        \___      \_     /\         \        /        / |     |        \___      \_     /\         \        /                         
-
-```
-
-# Lens Protocol
-
-The Lens Protocol is a decentralized, non-custodial social graph. Lens implements unique, on-chain social interaction mechanisms analogous to commonly understood Web2 social media interactions, but significantly expanded with unique functionality that empower communities to form and participants to own their own social graph.
+The Palm Protocol is a decentralized, non-custodial social messaging protocol for groups & communities. It is built on [Lens Protocol](https://github.com/lens-protocol/core). While Lens implements the on-chain social graph and interaction mechanisms for content-based social media interactions such as posts, comments, etc. Palm protocol extends the scope of on-chain social to groups messaging interactions. With native integration to Lens, Palm brings the similar empowerment for Lens individuals and communities to truly own their social groups on-chain under secure, privacy-enabled, and authentic environment free of scams, phishing, hacks common in web2 messangers.
 
 ## Setup
 
