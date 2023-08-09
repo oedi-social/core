@@ -48,7 +48,7 @@ USERID=$UID docker-compose down
 
 ## Protocol Overview
 
-The Lens Protocol transfers ownership of social graphs to the participants of that graph themselves. This is achieved by creating direct links between `profiles` and their `followers`, while allowing fine-grained control of additional logic, including monetization, to be executed during those interactions on a profile-by-profile basis.
+The Palm Protocol extends the Lens Protocol by introducing the concept of on-chain Groups to the Lens Social Graph. Groups, just like Posts on Lens, can be created, owned or "collected" by users, and other users can "join" those groups on-chain. This is similar to how on Lens Protocol, a user can create Profiles and other users can "follow" other profiles. In addition, while creating direct links between `profiles` and their `groups`, the protocol allows fine-grained control of "join" action logic logic, such as monetization or token-gating, to be executed during those interactions on a profile-by-group basis.
 
 Here's how it works...
 
