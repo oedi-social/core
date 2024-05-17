@@ -91,6 +91,15 @@ interface ILensHub {
     function whitelistCollectModule(address collectModule, bool whitelist) external;
 
     /**
+     * @notice Adds or removes a join module from the whitelist. This function can only be called by the current
+     * governance address.
+     *
+     * @param joinModule The join module contract address to add or remove from the whitelist.
+     * @param whitelist Whether or not the join module should be whitelisted.
+     */
+    function whitelistJoinModule(address joinModule, bool whitelist) external;
+
+    /**
      * @notice Creates a profile with the specified parameters, minting a profile NFT to the given recipient. This
      * function must be called by a whitelisted profile creator.
      *
@@ -102,6 +111,33 @@ interface ILensHub {
      *      followModuleInitData: The follow module initialization data, if any.
      */
     function createProfile(DataTypes.CreateProfileData calldata vars) external returns (uint256);
+
+    /**
+     * @notice Creates a group with the specified parameters
+     *
+     * @param vars A GroupData struct containing the following params:
+    *       profileId: The token ID of the profile to publish/create the group.
+    *       contentURI: The URI to set for this group.
+    *       collectModule: The collect module to set for this group.
+    *       collectModuleInitData: The data to pass to the collect module's initialization.
+    *       joinModule: The join module to set for this group.
+    *       joinModuleInitData: The data to pass to the join module's initialization.
+     */
+    function group(DataTypes.GroupData calldata vars) external returns (uint256);
+
+    /**
+     * @notice Creates a group via signature with the specified parameters
+     *
+     * @param vars A GroupWithSigData struct containing the following params:
+    *       profileId: The token ID of the profile to publish/create the group.
+    *       contentURI: The URI to set for this group.
+    *       collectModule: The collect module to set for this group.
+    *       collectModuleInitData: The data to pass to the collect module's initialization.
+    *       joinModule: The join module to set for this group.
+    *       joinModuleInitData: The data to pass to the join module's initialization.
+    *       sig: The EIP712 signature.
+     */
+    function groupWithSig(DataTypes.GroupWithSigData calldata vars) external returns (uint256);
 
     /**
      * @notice Sets the mapping between wallet and its main profile identity.
@@ -203,6 +239,24 @@ interface ILensHub {
     function postWithSig(DataTypes.PostWithSigData calldata vars) external returns (uint256);
 
     /**
+     * @notice Publishes a post to a given profile & group, must be called by the profile owner.
+     *
+     * @param vars A GroupPostData struct containing the needed parameters.
+     *
+     * @return uint256 An integer representing the post's publication ID.
+     */
+    function groupPost(DataTypes.GroupPostData calldata vars) external returns (uint256);
+
+    /**
+     * @notice Publishes a post to a given profile & group via signature with the specified parameters.
+     *
+     * @param vars A GroupPostWithSigData struct containing the regular parameters and an EIP712Signature struct.
+     *
+     * @return uint256 An integer representing the post's publication ID.
+     */
+    function groupPostWithSig(DataTypes.GroupPostWithSigData calldata vars) external returns (uint256);
+
+    /**
      * @notice Publishes a comment to a given profile, must be called by the profile owner.
      *
      * @param vars A CommentData struct containing the needed parameters.
@@ -219,6 +273,24 @@ interface ILensHub {
      * @return uint256 An integer representing the comment's publication ID.
      */
     function commentWithSig(DataTypes.CommentWithSigData calldata vars) external returns (uint256);
+
+    /**
+     * @notice Publishes a comment to a given profile & group, must be called by the profile owner.
+     *
+     * @param vars A GroupCommentData struct containing the needed parameters.
+     *
+     * @return uint256 An integer representing the comment's publication ID.
+     */
+    function groupComment(DataTypes.GroupCommentData calldata vars) external returns (uint256);
+
+    /**
+     * @notice Publishes a comment to a given profile & group via signature with the specified parameters.
+     *
+     * @param vars A GroupCommentWithSigData struct containing the regular parameters and an EIP712Signature struct.
+     *
+     * @return uint256 An integer representing the comment's publication ID.
+     */
+    function groupCommentWithSig(DataTypes.GroupCommentWithSigData calldata vars) external returns (uint256);
 
     /**
      * @notice Publishes a mirror to a given profile, must be called by the profile owner.
@@ -239,6 +311,24 @@ interface ILensHub {
     function mirrorWithSig(DataTypes.MirrorWithSigData calldata vars) external returns (uint256);
 
     /**
+     * @notice Publishes a mirror to a given profile & group, must be called by the profile owner.
+     *
+     * @param vars A GroupMirrorData struct containing the necessary parameters.
+     *
+     * @return uint256 An integer representing the mirror's publication ID.
+     */
+    function groupMirror(DataTypes.GroupMirrorData calldata vars) external returns (uint256);
+
+    /**
+     * @notice Publishes a mirror to a given profile & group via signature with the specified parameters.
+     *
+     * @param vars A GroupMirrorWithSigData struct containing the regular parameters and an EIP712Signature struct.
+     *
+     * @return uint256 An integer representing the mirror's publication ID.
+     */
+    function groupMirrorWithSig(DataTypes.GroupMirrorWithSigData calldata vars) external returns (uint256);
+
+    /**
      * @notice Follows the given profiles, executing each profile's follow module logic (if any) and minting followNFTs to the caller.
      *
      * NOTE: Both the `profileIds` and `datas` arrays must be of the same length, regardless if the profiles do not have a follow module set.
@@ -249,6 +339,20 @@ interface ILensHub {
      * @return uint256[] An array of integers representing the minted follow NFTs token IDs.
      */
     function follow(uint256[] calldata profileIds, bytes[] calldata datas)
+        external
+        returns (uint256[] memory);
+
+    /**
+     * @notice Joins the given groups, executing each group's join module logic (if any) and minting joinNFTs to the caller.
+     *
+     * NOTE: Both the `groupIds` and `datas` arrays must be of the same length, regardless if the profiles do not have a follow module set.
+     *
+     * @param groupIds The group ID array of the groups to join.
+     * @param datas The arbitrary data array to pass to the join module for each group if needed.
+     *
+     * @return uint256[] An array of integers representing the minted join NFTs token IDs.
+     */
+    function join(uint256[] calldata groupIds, bytes[] calldata datas)
         external
         returns (uint256[] memory);
 
@@ -288,6 +392,34 @@ interface ILensHub {
      * @return uint256 An integer representing the minted token ID.
      */
     function collectWithSig(DataTypes.CollectWithSigData calldata vars) external returns (uint256);
+
+
+    /**
+     * @notice Collects a given publication published in a group, executing collect module logic and minting a collectNFT to the caller.
+     *
+     * @param profileId The token ID of the profile that published the publication to collect.
+     * @param groupId The token ID of the group in which publication was published to collect.
+     * @param pubId The publication to collect's publication ID.
+     * @param data The arbitrary data to pass to the collect module if needed.
+     *
+     * @return uint256 An integer representing the minted token ID.
+     */
+    function groupCollect(
+        uint256 profileId,
+        uint256 groupId,
+        uint256 pubId,
+        bytes calldata data
+    ) external returns (uint256);
+
+    /**
+     * @notice Collects a given publication published in a group via signature with the specified parameters.
+     *
+     * @param vars A GroupCollectWithSigData struct containing the regular parameters as well as the collector's address and
+     * an EIP712Signature struct.
+     *
+     * @return uint256 An integer representing the minted token ID.
+     */
+    function groupCollectWithSig(DataTypes.GroupCollectWithSigData calldata vars) external returns (uint256);
 
     /**
      * @dev Helper function to emit a detailed followNFT transfer event from the hub, to be consumed by frontends to track
@@ -371,6 +503,15 @@ interface ILensHub {
      * @return bool True if the the collect module is whitelisted, false otherwise.
      */
     function isCollectModuleWhitelisted(address collectModule) external view returns (bool);
+
+    /**
+     * @notice Returns whether or not a join module is whitelisted.
+     *
+     * @param joinModule The address of the join module to check.
+     *
+     * @return bool True if the the join module is whitelisted, false otherwise.
+     */
+    function isJoinModuleWhitelisted(address joinModule) external view returns (bool);
 
     /**
      * @notice Returns the currently configured governance address.
@@ -478,6 +619,21 @@ interface ILensHub {
         returns (uint256, uint256);
 
     /**
+     * @notice Returns the publication pointer (profileId, groupId & pubId) associated with a given publication.
+     *
+     * @param profileId The token ID of the profile that published the publication to query the pointer for.
+     * @param groupId The group ID of the group that published the publication to query the pointer for.
+     * @param pubId The publication ID of the publication to query the pointer for.
+     *
+     * @return tuple First, the profile ID of the profile the current publication is pointing to, second, the
+     * publication ID of the publication the current publication is pointing to.
+     */
+    function getGroupPubPointer(uint256 profileId, uint256 groupId, uint256 pubId)
+        external
+        view
+        returns (uint256, uint256);
+
+    /**
      * @notice Returns the URI associated with a given publication.
      *
      * @param profileId The token ID of the profile that published the publication to query.
@@ -519,6 +675,20 @@ interface ILensHub {
         returns (DataTypes.PublicationStruct memory);
 
     /**
+     * @notice Returns the full publication struct for a given publication in group.
+     *
+     * @param profileId The token ID of the profile that published the publication to query.
+     * @param groupId The group ID of the group in which publication is published to query.
+     * @param pubId The publication ID of the publication to query.
+     *
+     * @return PublicationStruct The publication struct associated with the queried publication.
+     */
+    function getGroupPub(uint256 profileId, uint256 groupId, uint256 pubId)
+        external
+        view
+        returns (DataTypes.PublicationStruct memory);
+
+    /**
      * @notice Returns the publication type associated with a given publication.
      *
      * @param profileId The token ID of the profile that published the publication to query.
@@ -527,6 +697,16 @@ interface ILensHub {
      * @return PubType The publication type, as a member of an enum (either "post," "comment" or "mirror").
      */
     function getPubType(uint256 profileId, uint256 pubId) external view returns (DataTypes.PubType);
+    /**
+     * @notice Returns the publication type associated with a given publication.
+     *
+     * @param profileId The token ID of the profile that published the publication to query.
+     * @param groupId The group ID of the group that published the publication to query.
+     * @param pubId The publication ID of the publication to query. should set to 0 if looking for a group pubType
+     *
+     * @return PubType The publication type, as a member of an enum (either "Group", "PostInGroup", "CommentInGroup" or "MirrorInGroup").
+     */
+    function getGroupPubType(uint256 profileId, uint256 groupId, uint256 pubId) external view returns (DataTypes.PubType);
 
     /**
      * @notice Returns the follow NFT implementation address.

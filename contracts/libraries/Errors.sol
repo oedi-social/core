@@ -18,6 +18,7 @@ library Errors {
     error CollectModuleNotWhitelisted();
     error FollowModuleNotWhitelisted();
     error ReferenceModuleNotWhitelisted();
+    error JoinModuleNotWhitelisted();
     error ProfileCreatorNotWhitelisted();
     error NotProfileOwner();
     error NotProfileOwnerOrDispatcher();
@@ -35,6 +36,12 @@ library Errors {
     error CannotCommentOnSelf();
     error NotWhitelisted();
     error InvalidParameter();
+
+    // Group Errors
+    error GroupDoesNotExist();
+    error GroupDoesNotHaveMembers();
+    error NotGroupMember();
+    error CannotCommentOnGroup();
 
     // Module Errors
     error InitParamsInvalid();

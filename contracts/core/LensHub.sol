@@ -136,6 +136,16 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
         emit Events.CollectModuleWhitelisted(collectModule, whitelist, block.timestamp);
     }
 
+    /// @inheritdoc ILensHub
+    function whitelistJoinModule(address joinModule, bool whitelist)
+        external
+        override
+        onlyGov
+    {
+        _joinModuleWhitelisted[joinModule] = whitelist;
+        emit Events.JoinModuleWhitelisted(joinModule, whitelist, block.timestamp);
+    }
+
     /// *********************************
     /// *****PROFILE OWNER FUNCTIONS*****
     /// *********************************
@@ -408,6 +418,127 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
                 vars.referenceModuleInitData
             );
     }
+    /// @inheritdoc ILensHub
+    function group(DataTypes.GroupData calldata vars)
+    external
+    override
+    whenPublishingEnabled
+    returns (uint256)
+    {
+        _validateCallerIsProfileOwnerOrDispatcher(vars.profileId);
+        return
+        _createGroup(
+            vars.profileId,
+            vars.contentURI,
+            vars.collectModule,
+            vars.collectModuleInitData,
+            vars.joinModule,
+            vars.joinModuleInitData
+        );
+    }
+    /// @inheritdoc ILensHub
+    function groupWithSig(DataTypes.GroupWithSigData calldata vars)
+    external
+    override
+    whenPublishingEnabled
+    returns (uint256)
+    {
+        address owner = ownerOf(vars.profileId);
+        unchecked {
+            _validateRecoveredAddress(
+                _calculateDigest(
+                    keccak256(
+                        abi.encode(
+                            GROUP_WITH_SIG_TYPEHASH,
+                            vars.profileId,
+                            keccak256(bytes(vars.contentURI)),
+                            vars.collectModule,
+                            keccak256(vars.collectModuleInitData),
+                            vars.joinModule,
+                            keccak256(vars.joinModuleInitData),
+                            sigNonces[owner]++,
+                            vars.sig.deadline
+                        )
+                    )
+                ),
+                owner,
+                vars.sig
+            );
+        }
+        return
+        _createGroup(
+            vars.profileId,
+            vars.contentURI,
+            vars.collectModule,
+            vars.collectModuleInitData,
+            vars.joinModule,
+            vars.joinModuleInitData
+        );
+    }
+
+    /// @inheritdoc ILensHub
+    function groupPost(DataTypes.GroupPostData calldata vars)
+    external
+    override
+    whenPublishingEnabled
+    returns (uint256)
+    {
+        _validateCallerIsProfileOwnerOrDispatcher(vars.profileId);
+        _validateGroupExistsAndCallerIsGroupMember(vars.profileId, vars.groupId);
+        return
+        _createGroupPost(
+            vars.profileId,
+            vars.groupId,
+            vars.contentURI,
+            vars.collectModule,
+            vars.collectModuleInitData,
+            vars.referenceModule,
+            vars.referenceModuleInitData
+        );
+    }
+
+    /// @inheritdoc ILensHub
+    function groupPostWithSig(DataTypes.GroupPostWithSigData calldata vars)
+    external
+    override
+    whenPublishingEnabled
+    returns (uint256)
+    {
+        address owner = ownerOf(vars.profileId);
+        unchecked {
+            _validateRecoveredAddress(
+                _calculateDigest(
+                    keccak256(
+                        abi.encode(
+                            GROUP_POST_WITH_SIG_TYPEHASH,
+                            vars.profileId,
+                            vars.groupId,
+                            keccak256(bytes(vars.contentURI)),
+                            vars.collectModule,
+                            keccak256(vars.collectModuleInitData),
+                            vars.referenceModule,
+                            keccak256(vars.referenceModuleInitData),
+                            sigNonces[owner]++,
+                            vars.sig.deadline
+                        )
+                    )
+                ),
+                owner,
+                vars.sig
+            );
+        }
+        _validateGroupExistsAndCallerIsGroupMember(vars.profileId, vars.groupId);
+        return
+        _createGroupPost(
+            vars.profileId,
+            vars.groupId,
+            vars.contentURI,
+            vars.collectModule,
+            vars.collectModuleInitData,
+            vars.referenceModule,
+            vars.referenceModuleInitData
+        );
+    }
 
     /// @inheritdoc ILensHub
     function comment(DataTypes.CommentData calldata vars)
@@ -469,6 +600,69 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
     }
 
     /// @inheritdoc ILensHub
+    function groupComment(DataTypes.GroupCommentData calldata vars)
+    external
+    override
+    whenPublishingEnabled
+    returns (uint256)
+    {
+        _validateCallerIsProfileOwnerOrDispatcher(vars.profileId);
+        _validateGroupExistsAndCallerIsGroupMember(vars.profileId, vars.groupId);
+        return _createGroupComment(vars);
+    }
+
+    /// @inheritdoc ILensHub
+    function groupCommentWithSig(DataTypes.GroupCommentWithSigData calldata vars)
+    external
+    override
+    whenPublishingEnabled
+    returns (uint256)
+    {
+        address owner = ownerOf(vars.profileId);
+    unchecked {
+        _validateRecoveredAddress(
+            _calculateDigest(
+                keccak256(
+                    abi.encode(
+                        GROUP_COMMENT_WITH_SIG_TYPEHASH,
+                        vars.profileId,
+                        keccak256(bytes(vars.contentURI)),
+                        vars.profileIdPointed,
+                        vars.pubIdPointed,
+                        vars.groupId,
+                        keccak256(vars.referenceModuleData),
+                        vars.collectModule,
+                        keccak256(vars.collectModuleInitData),
+                        vars.referenceModule,
+                        keccak256(vars.referenceModuleInitData),
+                        sigNonces[owner]++,
+                        vars.sig.deadline
+                    )
+                )
+            ),
+            owner,
+            vars.sig
+        );
+    }
+    _validateGroupExistsAndCallerIsGroupMember(vars.profileId, vars.groupId);
+    return
+        _createGroupComment(
+            DataTypes.GroupCommentData(
+                vars.profileId,
+                vars.contentURI,
+                vars.profileIdPointed,
+                vars.pubIdPointed,
+                vars.groupId,
+                vars.referenceModuleData,
+                vars.collectModule,
+                vars.collectModuleInitData,
+                vars.referenceModule,
+                vars.referenceModuleInitData
+            )
+        );
+    }
+
+    /// @inheritdoc ILensHub
     function mirror(DataTypes.MirrorData calldata vars)
         external
         override
@@ -514,6 +708,63 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
                     vars.profileId,
                     vars.profileIdPointed,
                     vars.pubIdPointed,
+                    vars.referenceModuleData,
+                    vars.referenceModule,
+                    vars.referenceModuleInitData
+                )
+            );
+    }
+
+    /// @inheritdoc ILensHub
+    function groupMirror(DataTypes.GroupMirrorData calldata vars)
+    external
+    override
+    whenPublishingEnabled
+    returns (uint256)
+    {
+        _validateCallerIsProfileOwnerOrDispatcher(vars.profileId);
+        _validateGroupExistsAndCallerIsGroupMember(vars.profileId, vars.groupId);
+        return _createGroupMirror(vars);
+    }
+
+    /// @inheritdoc ILensHub
+    function groupMirrorWithSig(DataTypes.GroupMirrorWithSigData calldata vars)
+        external
+        override
+        whenPublishingEnabled
+        returns (uint256)
+    {
+        address owner = ownerOf(vars.profileId);
+        unchecked {
+            _validateRecoveredAddress(
+                _calculateDigest(
+                    keccak256(
+                        abi.encode(
+                            GROUP_MIRROR_WITH_SIG_TYPEHASH,
+                            vars.profileId,
+                            vars.profileIdPointed,
+                            vars.pubIdPointed,
+                            vars.groupId,
+                            keccak256(vars.referenceModuleData),
+                            vars.referenceModule,
+                            keccak256(vars.referenceModuleInitData),
+                            sigNonces[owner]++,
+                            vars.sig.deadline
+                        )
+                    )
+                ),
+                owner,
+                vars.sig
+            );
+        }
+        _validateGroupExistsAndCallerIsGroupMember(vars.profileId, vars.groupId);
+        return
+            _createGroupMirror(
+                DataTypes.GroupMirrorData(
+                    vars.profileId,
+                    vars.profileIdPointed,
+                    vars.pubIdPointed,
+                    vars.groupId,
                     vars.referenceModuleData,
                     vars.referenceModule,
                     vars.referenceModuleInitData
@@ -613,6 +864,22 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
     }
 
     /// @inheritdoc ILensHub
+    function join(uint256[] calldata groupIds, bytes[] calldata datas)
+    external
+    override
+    whenNotPaused
+    returns (uint256[] memory)
+    {
+        return
+        InteractionLogic.join(
+            msg.sender,
+            groupIds,
+            datas,
+            _groupPubById
+        );
+    }
+
+    /// @inheritdoc ILensHub
     function collect(
         uint256 profileId,
         uint256 pubId,
@@ -663,6 +930,66 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
                 vars.data,
                 COLLECT_NFT_IMPL,
                 _pubByIdByProfile,
+                _profileById
+            );
+    }
+
+    /// @inheritdoc ILensHub
+    function groupCollect(
+        uint256 profileId,
+        uint256 groupId,
+        uint256 pubId,
+        bytes calldata data
+    ) external override whenNotPaused returns (uint256) {
+        _validateGroupExistsAndCallerIsGroupMember(profileId, groupId);
+        return
+        InteractionLogic.groupCollect(
+            msg.sender,
+            profileId,
+            groupId,
+            pubId,
+            data,
+            COLLECT_NFT_IMPL,
+            _pubByIdByGroupByProfile,
+            _profileById
+        );
+    }
+
+    /// @inheritdoc ILensHub
+    function groupCollectWithSig(DataTypes.GroupCollectWithSigData calldata vars)
+        external
+        override
+        whenNotPaused
+        returns (uint256)
+    {
+        unchecked {
+            _validateRecoveredAddress(
+                _calculateDigest(
+                    keccak256(
+                        abi.encode(
+                            GROUP_COLLECT_WITH_SIG_TYPEHASH,
+                            vars.profileId,
+                            vars.groupId,
+                            vars.pubId,
+                            keccak256(vars.data),
+                            sigNonces[vars.collector]++,
+                            vars.sig.deadline
+                        )
+                    )
+                ),
+                vars.collector,
+                vars.sig
+            );
+        }
+        return
+            InteractionLogic.groupCollect(
+                vars.collector,
+                vars.profileId,
+                vars.groupId,
+                vars.pubId,
+                vars.data,
+                COLLECT_NFT_IMPL,
+                _pubByIdByGroupByProfile,
                 _profileById
             );
     }
@@ -744,6 +1071,16 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
     }
 
     /// @inheritdoc ILensHub
+    function isJoinModuleWhitelisted(address joinModule)
+        external
+        view
+        override
+        returns (bool)
+    {
+        return _joinModuleWhitelisted[joinModule];
+    }
+
+    /// @inheritdoc ILensHub
     function getGovernance() external view override returns (address) {
         return _governance;
     }
@@ -821,6 +1158,18 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
     }
 
     /// @inheritdoc ILensHub
+    function getGroupPubPointer(uint256 profileId, uint256 groupId, uint256 pubId)
+        external
+        view
+        override
+        returns (uint256, uint256)
+    {
+        uint256 profileIdPointed = _pubByIdByGroupByProfile[profileId][groupId][pubId].profileIdPointed;
+        uint256 pubIdPointed = _pubByIdByGroupByProfile[profileId][groupId][pubId].pubIdPointed;
+        return (profileIdPointed, pubIdPointed);
+    }
+
+    /// @inheritdoc ILensHub
     function getContentURI(uint256 profileId, uint256 pubId)
         external
         view
@@ -862,6 +1211,16 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
     }
 
     /// @inheritdoc ILensHub
+    function getGroupPub(uint256 profileId, uint256 groupId, uint256 pubId)
+        external
+        view
+        override
+        returns (DataTypes.PublicationStruct memory)
+    {
+        return _pubByIdByGroupByProfile[profileId][groupId][pubId];
+    }
+
+    /// @inheritdoc ILensHub
     function getPubType(uint256 profileId, uint256 pubId)
         external
         view
@@ -876,6 +1235,25 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
             return DataTypes.PubType.Post;
         } else {
             return DataTypes.PubType.Comment;
+        }
+    }
+    /// @inheritdoc ILensHub
+    function getGroupPubType(uint256 profileId, uint256 groupId, uint256 pubId)
+        external
+        view
+        override
+        returns (DataTypes.PubType)
+    {
+        if ((pubId == 0 && _groupPubById[groupId].profileId == 0) || _pubByIdByGroupByProfile[profileId][groupId][pubId].pubIdPointed == 0) {
+            return DataTypes.PubType.Nonexistent;
+        } else if (pubId == 0 && _groupPubById[groupId].profileId != 0) {
+            return DataTypes.PubType.Group;
+        } else if (_pubByIdByGroupByProfile[profileId][groupId][pubId].collectModule == address(0)) {
+            return DataTypes.PubType.MirrorInGroup;
+        } else if (_pubByIdByGroupByProfile[profileId][groupId][pubId].profileIdPointed == 0) {
+            return DataTypes.PubType.PostInGroup;
+        } else {
+            return DataTypes.PubType.CommentInGroup;
         }
     }
 
@@ -939,6 +1317,60 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
             return pubId;
         }
     }
+    function _createGroup(
+        uint256 profileId,
+        string memory contentURI,
+        address collectModule,
+        bytes memory collectModuleData,
+        address joinModule,
+        bytes memory joinModuleData
+    ) internal returns (uint256) {
+        unchecked {
+            uint256 pubId = ++_profileById[profileId].pubCount;
+            PublishingLogic.createGroup(
+                profileId,
+                contentURI,
+                collectModule,
+                collectModuleData,
+                joinModule,
+                joinModuleData,
+                pubId,
+                _groupPubById,
+                _collectModuleWhitelisted,
+                _joinModuleWhitelisted
+            );
+            return pubId;
+        }
+    }
+
+    function _createGroupPost(
+        uint256 profileId,
+        uint256 groupId, // pubIdPointed
+        string memory contentURI,
+        address collectModule,
+        bytes memory collectModuleData,
+        address referenceModule,
+        bytes memory referenceModuleData
+
+    ) internal returns (uint256) {
+        unchecked {
+            uint256 pubId = ++_profileById[profileId].pubCount;
+            PublishingLogic.createGroupPost(
+                profileId,
+                groupId,
+                contentURI,
+                collectModule,
+                collectModuleData,
+                referenceModule,
+                referenceModuleData,
+                pubId,
+                _pubByIdByGroupByProfile,
+                _collectModuleWhitelisted,
+                _referenceModuleWhitelisted
+            );
+            return pubId;
+        }
+    }
 
     /*
      * If the profile ID is zero, this is the equivalent of "unsetting" a default profile.
@@ -968,6 +1400,21 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
         }
     }
 
+    function _createGroupComment(DataTypes.GroupCommentData memory vars) internal returns (uint256) {
+        unchecked {
+            uint256 pubId = ++_profileById[vars.profileId].pubCount;
+            PublishingLogic.createGroupComment(
+                vars,
+                pubId,
+                _profileById,
+                _pubByIdByGroupByProfile,
+                _collectModuleWhitelisted,
+                _referenceModuleWhitelisted
+            );
+            return pubId;
+        }
+    }
+
     function _createMirror(DataTypes.MirrorData memory vars) internal returns (uint256) {
         unchecked {
             uint256 pubId = ++_profileById[vars.profileId].pubCount;
@@ -975,6 +1422,19 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
                 vars,
                 pubId,
                 _pubByIdByProfile,
+                _referenceModuleWhitelisted
+            );
+            return pubId;
+        }
+    }
+
+    function _createGroupMirror(DataTypes.GroupMirrorData memory vars) internal returns (uint256) {
+        unchecked {
+            uint256 pubId = ++_profileById[vars.profileId].pubCount;
+            PublishingLogic.createGroupMirror(
+                vars,
+                pubId,
+                _pubByIdByGroupByProfile,
                 _referenceModuleWhitelisted
             );
             return pubId;
@@ -1028,6 +1488,16 @@ contract LensHub is LensNFTBase, VersionedInitializable, LensMultiState, LensHub
 
     function _validateCallerIsProfileOwner(uint256 profileId) internal view {
         if (msg.sender != ownerOf(profileId)) revert Errors.NotProfileOwner();
+    }
+
+    function _validateGroupExistsAndCallerIsGroupMember(uint256 profileId, uint256 groupId) internal view {
+        DataTypes.GroupStruct memory groupPub = _groupPubById[groupId];
+        if(groupPub.joinModule == address(0)) revert Errors.GroupDoesNotExist();
+        if(groupPub.joinNFT == address(0)) revert Errors.GroupDoesNotHaveMembers();
+
+        address profileOwner = ownerOf(profileId);
+
+        if (IERC721Enumerable(groupPub.joinNFT).balanceOf(profileOwner) != 0 && profileId != groupPub.profileId) revert Errors.NotGroupMember(); // group creator does not need to join Group first
     }
 
     function _validateCallerIsGovernance() internal view {

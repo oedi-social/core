@@ -19,8 +19,8 @@ import {Strings} from '@openzeppelin/contracts/utils/Strings.sol';
  * @title InteractionLogic
  * @author Lens Protocol
  *
- * @notice This is the library that contains the logic for follows & collects. 
- 
+ * @notice This is the library that contains the logic for follows & collects.
+
  * @dev The functions are external, so they are called from the hub via `delegateCall` under the hood.
  */
 library InteractionLogic {
@@ -74,6 +74,55 @@ library InteractionLogic {
             }
         }
         emit Events.Followed(follower, profileIds, followModuleDatas, block.timestamp);
+        return tokenIds;
+    }
+
+    /**
+ * @notice Join the given profiles, executing the necessary logic and module calls before minting the follow
+     * NFT(s) to the follower.
+     *
+     * @param joiner The address executing the join.
+     * @param groupIds The array of group IDs to join.
+     * @param joinModuleDatas The array of join module data parameters to pass to each group's follow module.
+     * @param _groupPubById A pointer to the storage mapping of group structs by group ID.
+     *
+     * @return uint256[] An array of integers representing the minted follow NFTs token IDs.
+     */
+    function join(
+        address joiner,
+        uint256[] calldata groupIds,
+        bytes[] calldata joinModuleDatas,
+        mapping(uint256 => DataTypes.GroupStruct) storage _groupPubById
+    ) external returns (uint256[] memory) {
+        if (groupIds.length != joinModuleDatas.length) revert Errors.ArrayMismatch();
+        uint256[] memory tokenIds = new uint256[](groupIds.length);
+        for (uint256 i = 0; i < groupIds.length; ) {
+            uint256 profileId = _groupPubById[groupIds[i]].profileId;
+            if (profileId != 0)
+                revert Errors.GroupDoesNotExist();
+
+            address joinModule = _groupPubById[groupIds[i]].joinModule;
+            address joinNFT = _groupPubById[groupIds[i]].joinNFT;
+
+            if (joinNFT == address(0)) {
+                joinNFT = _deployJoinNFT(groupIds[i]);
+                _groupPubById[groupIds[i]].joinNFT = joinNFT;
+            }
+
+            tokenIds[i] = IFollowNFT(joinNFT).mint(joiner);
+
+            if (joinModule != address(0)) {
+                IFollowModule(joinModule).processFollow( // TODO: IFollowModule or IJoinModule? impl ? processFollow -> processJoin ?
+                    joiner,
+                    groupIds[i],
+                    joinModuleDatas[i]
+                );
+            }
+        unchecked {
+            ++i;
+        }
+        }
+        emit Events.Joined(joiner, groupIds, joinModuleDatas, block.timestamp);
         return tokenIds;
     }
 
@@ -140,6 +189,72 @@ library InteractionLogic {
     }
 
     /**
+ * @notice Collects the given publication, executing the necessary logic and module call before minting the
+     * collect NFT to the collector.
+     *
+     * @param collector The address executing the collect.
+     * @param profileId The token ID of the publication being collected's parent profile.
+     * @param pubId The publication ID of the publication being collected.
+     * @param collectModuleData The data to pass to the publication's collect module.
+     * @param collectNFTImpl The address of the collect NFT implementation, which has to be passed because it's an immutable in the hub.
+     * @param _pubByIdByGroupByProfile A pointer to the storage mapping of publications by pubId by group ID by profile ID.
+     * @param _profileById A pointer to the storage mapping of profile structs by profile ID.
+     *
+     * @return uint256 An integer representing the minted token ID.
+     */
+    function groupCollect( // TODO: collecting a group itself should be a different function
+        address collector,
+        uint256 profileId,
+        uint256 groupId,
+        uint256 pubId,
+        bytes calldata collectModuleData,
+        address collectNFTImpl,
+        mapping(uint256 => mapping(uint256 => mapping(uint256 => DataTypes.PublicationStruct)))
+        storage _pubByIdByGroupByProfile,
+        mapping(uint256 => DataTypes.ProfileStruct) storage _profileById
+    ) external returns (uint256) {
+        // TODO: need to check if the publication exists
+
+        (uint256 rootProfileId, uint256 rootPubId, address rootCollectModule) = Helpers
+        .getPointedIfGroupMirror(groupId, profileId, pubId, _pubByIdByGroupByProfile);
+
+        uint256 tokenId;
+        // Avoids stack too deep
+        {
+            address collectNFT = _pubByIdByGroupByProfile[rootProfileId][groupId][rootPubId].collectNFT;
+            if (collectNFT == address(0)) {
+                collectNFT = _deployCollectNFT(
+                    rootProfileId,
+                    rootPubId,
+                    _profileById[rootProfileId].handle,
+                    collectNFTImpl
+                );
+                _pubByIdByGroupByProfile[rootProfileId][groupId][rootPubId].collectNFT = collectNFT;
+            }
+            tokenId = ICollectNFT(collectNFT).mint(collector);
+        }
+
+        ICollectModule(rootCollectModule).processCollect(
+            profileId,
+            collector,
+            rootProfileId,
+            rootPubId,
+            collectModuleData
+        );
+        _emitGroupCollectedEvent(
+            collector,
+            profileId,
+            groupId,
+            pubId,
+            rootProfileId,
+            rootPubId,
+            collectModuleData
+        );
+
+        return tokenId;
+    }
+
+    /**
      * @notice Deploys the given profile's Follow NFT contract.
      *
      * @param profileId The token ID of the profile which Follow NFT should be deployed.
@@ -155,6 +270,24 @@ library InteractionLogic {
         emit Events.FollowNFTDeployed(profileId, followNFT, block.timestamp);
 
         return followNFT;
+    }
+
+    /**
+     * @notice Deploys the given group's Join NFT contract.
+     *
+     * @param groupId The group ID of the group which Join NFT should be deployed.
+     *
+     * @return address The address of the deployed Join NFT contract.
+     */
+    function _deployJoinNFT(uint256 groupId) private returns (address) {
+        bytes memory functionData = abi.encodeWithSelector(
+            IFollowNFT.initialize.selector,
+            groupId
+        );
+        address joinNFT = address(new FollowNFTProxy(functionData)); // TODO: change to JoinNFTProxy, ans: what about keep it same as we're going to use IFollowNFT interface as join ?
+        emit Events.JoinNFTDeployed(groupId, joinNFT, block.timestamp);
+
+        return joinNFT;
     }
 
     /**
@@ -213,6 +346,39 @@ library InteractionLogic {
         emit Events.Collected(
             collector,
             profileId,
+            pubId,
+            rootProfileId,
+            rootPubId,
+            data,
+            block.timestamp
+        );
+    }
+    /**
+     * @notice Emits the `Collected` event that signals that a successful collect action has occurred.
+     *
+     * @dev This is done through this function to prevent stack too deep compilation error.
+     *
+     * @param collector The address collecting the publication.
+     * @param profileId The token ID of the profile that the collect was initiated towards, useful to differentiate mirrors.
+     * @param groupId The group ID whose publication the collect was initiated towards, useful to differentiate mirrors.
+     * @param pubId The publication ID that the collect was initiated towards, useful to differentiate mirrors.
+     * @param rootProfileId The profile token ID of the profile whose publication is being collected.
+     * @param rootPubId The publication ID of the publication being collected.
+     * @param data The data passed to the collect module.
+     */
+    function _emitGroupCollectedEvent(
+        address collector,
+        uint256 groupId,
+        uint256 profileId,
+        uint256 pubId,
+        uint256 rootProfileId,
+        uint256 rootPubId,
+        bytes calldata data
+    ) private {
+        emit Events.GroupCollected(
+            collector,
+            profileId,
+            groupId,
             pubId,
             rootProfileId,
             rootPubId,

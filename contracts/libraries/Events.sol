@@ -86,6 +86,18 @@ library Events {
         bool indexed whitelisted,
         uint256 timestamp
     );
+    /**
+    * @dev Emitted when a join module is added to or removed from the whitelist.
+     *
+     * @param joinModule The address of the join module.
+     * @param whitelisted Whether or not the join module is being added to the whitelist.
+     * @param timestamp The current block timestamp.
+     */
+    event JoinModuleWhitelisted(
+        address indexed joinModule,
+        bool indexed whitelisted,
+        uint256 timestamp
+    );
 
     /**
      * @dev Emitted when a reference module is added to or removed from the whitelist.
@@ -216,6 +228,93 @@ library Events {
         uint256 timestamp
     );
 
+
+    /**
+    * @dev Emitted when a group is created.
+    *
+    * @param profileId The profile's token ID, which is the group's creator.
+    * @param groupId The newly created group's ID.
+    * @param contentURI The URI mapped to this new group.
+    * @param collectModule The collect module mapped to this new group. This CANNOT be the zero address.
+    * @param collectModuleReturnData The data returned from the collect module's initialization for this given
+    * group. This is abi encoded and totally depends on the collect module chosen.
+    * @param joinModule The join module mapped to this new group. This CANNOT be the zero address.
+    * @param joinModuleReturnData The data returned from the join module's initialization for this given
+    * group. This is abi encoded and totally depends on the join module chosen.
+    * @param timestamp The current block timestamp.
+    */
+    event GroupCreated(
+        uint256 indexed profileId,
+        uint256 indexed groupId,
+        string contentURI,
+        address collectModule,
+        bytes collectModuleReturnData,
+        address joinModule,
+        bytes joinModuleReturnData,
+        uint256 timestamp
+    );
+
+    /**
+    * @dev Emitted when a post is published in a group.
+    *
+    * @param profileId The profile's token ID, which is publishing the post.
+    * @param groupId The group's ID, in which post is published.
+    * @param pubId The new publication's ID.
+    * @param contentURI The URI mapped to this new publication.
+    * @param collectModule The collect module mapped to this new publication. This CANNOT be the zero address.
+    * @param collectModuleReturnData The data returned from the collect module's initialization for this given
+    * publication. This is abi encoded and totally depends on the collect module chosen.
+    * @param referenceModule The reference module set for this publication.
+    * @param referenceModuleReturnData The data returned from the reference module at initialization. This is abi
+    * encoded and totally depends on the reference module chosen.
+    * @param timestamp The current block timestamp.
+    */
+    event PostPublishedInGroup(
+        uint256 indexed profileId,
+        uint256 indexed groupId,
+        uint256 pubId,
+        string contentURI,
+        address collectModule,
+        bytes collectModuleReturnData,
+        address referenceModule,
+        bytes referenceModuleReturnData,
+        uint256 timestamp
+    );
+
+
+    /**
+     * @dev Emitted when a "group comment" is published.
+     *
+     * @param profileId The profile's token ID.
+     * @param pubId The new publication's ID.
+     * @param contentURI The URI mapped to this new publication.
+     * @param profileIdPointed The profile token ID that this comment points to.
+     * @param pubIdPointed The publication ID that this comment points to.
+     * @param groupId The group's ID, in which comment is published.
+     * @param referenceModuleData The data passed to the reference module.
+     * @param collectModule The collect module mapped to this new publication. This CANNOT be the zero address.
+     * @param collectModuleReturnData The data returned from the collect module's initialization for this given
+     * publication. This is abi encoded and totally depends on the collect module chosen.
+     * @param referenceModule The reference module set for this publication.
+     * @param referenceModuleReturnData The data returned from the reference module at initialization. This is abi
+     * encoded and totally depends on the reference module chosen.
+     * @param timestamp The current block timestamp.
+     */
+    event GroupCommentCreated(
+        uint256 indexed profileId,
+        uint256 indexed pubId,
+        string contentURI,
+        uint256 profileIdPointed,
+        uint256 pubIdPointed,
+        uint256 groupId,
+        bytes referenceModuleData,
+        address collectModule,
+        bytes collectModuleReturnData,
+        address referenceModule,
+        bytes referenceModuleReturnData,
+        uint256 timestamp
+    );
+
     /**
      * @dev Emitted when a "comment" is published.
      *
@@ -272,6 +371,32 @@ library Events {
     );
 
     /**
+     * @dev Emitted when a "group mirror" is published.
+     *
+     * @param profileId The profile's token ID.
+     * @param pubId The new publication's ID.
+     * @param profileIdPointed The profile token ID that this mirror points to.
+     * @param groupId The group's ID, in which mirror is published.
+     * @param pubIdPointed The publication ID that this mirror points to.
+     * @param referenceModuleData The data passed to the reference module.
+     * @param referenceModule The reference module set for this publication.
+     * @param referenceModuleReturnData The data returned from the reference module at initialization. This is abi
+     * encoded and totally depends on the reference module chosen.
+     * @param timestamp The current block timestamp.
+     */
+    event GroupMirrorCreated(
+        uint256 indexed profileId,
+        uint256 indexed pubId,
+        uint256 profileIdPointed,
+        uint256 groupId,
+        uint256 pubIdPointed,
+        bytes referenceModuleData,
+        address referenceModule,
+        bytes referenceModuleReturnData,
+        uint256 timestamp
+    );
+
+    /**
      * @dev Emitted when a followNFT clone is deployed using a lazy deployment pattern.
      *
      * @param profileId The token ID of the profile to which this followNFT is associated.
@@ -281,6 +406,19 @@ library Events {
     event FollowNFTDeployed(
         uint256 indexed profileId,
         address indexed followNFT,
+        uint256 timestamp
+    );
+
+    /**
+     * @dev Emitted when a joinNFT clone is deployed using a lazy deployment pattern.
+     *
+     * @param groupId The group ID of the group to which this joinNFT is associated.
+     * @param joinNFT The address of the newly deployed joinNFT clone.
+     * @param timestamp The current block timestamp.
+     */
+    event JoinNFTDeployed(
+        uint256 indexed groupId,
+        address indexed joinNFT,
         uint256 timestamp
     );
 
@@ -319,6 +457,28 @@ library Events {
         bytes collectModuleData,
         uint256 timestamp
     );
+    /**
+     * @dev Emitted upon a successful collect action.
+     *
+     * @param collector The address collecting the publication.
+     * @param profileId The token ID of the profile that the collect was initiated towards, useful to differentiate mirrors.
+     * @param groupId The group's ID, in which collect is initiated.
+     * @param pubId The publication ID that the collect was initiated towards, useful to differentiate mirrors.
+     * @param rootProfileId The profile token ID of the profile whose publication is being collected.
+     * @param rootPubId The publication ID of the publication being collected.
+     * @param collectModuleData The data passed to the collect module.
+     * @param timestamp The current block timestamp.
+     */
+    event GroupCollected(
+        address indexed collector,
+        uint256 indexed profileId,
+        uint256 indexed groupId,
+        uint256 pubId,
+        uint256 rootProfileId,
+        uint256 rootPubId,
+        bytes collectModuleData,
+        uint256 timestamp
+    );
 
     /**
      * @dev Emitted upon a successful follow action.
@@ -332,6 +492,21 @@ library Events {
         address indexed follower,
         uint256[] profileIds,
         bytes[] followModuleDatas,
+        uint256 timestamp
+    );
+
+    /**
+     * @dev Emitted upon a successful join action.
+     *
+     * @param joiner The address joining the given groups.
+     * @param groupIds The token ID array of the groups being followed.
+     * @param joinModuleDatas The array of data parameters passed to each join module.
+     * @param timestamp The current block timestamp.
+     */
+    event Joined(
+        address indexed joiner,
+        uint256[] groupIds,
+        bytes[] joinModuleDatas,
         uint256 timestamp
     );
 

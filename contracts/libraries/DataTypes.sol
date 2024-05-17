@@ -26,14 +26,19 @@ library DataTypes {
      * @notice An enum specifically used in a helper function to easily retrieve the publication type for integrations.
      *
      * @param Post A standard post, having a URI, a collect module but no pointer to another publication.
+     * @param Group A group, having a URI, a collect module and a join module.
      * @param Comment A comment, having a URI, a collect module and a pointer to another publication.
      * @param Mirror A mirror, having a pointer to another publication, but no URI or collect module.
      * @param Nonexistent An indicator showing the queried publication does not exist.
      */
     enum PubType {
         Post,
+        Group,
+        PostInGroup,
         Comment,
+        CommentInGroup,
         Mirror,
+        MirrorInGroup,
         Nonexistent
     }
 
@@ -69,6 +74,25 @@ library DataTypes {
         string handle;
         string imageURI;
         string followNFTURI;
+    }
+
+    /**
+     * @notice A struct containing data associated with each new group.
+     *
+     * @param profileId The profile token ID this group is associated with.
+     * @param contentURI The URI associated with this group.
+     * @param joinModule The address of the current join module in use by this group, can be empty.
+     * @param joinNFT The address of the joinNFT associated with this group, if any.
+     * @param collectModule The address of the collect module associated with this group, this exists for all groups.
+     * @param collectNFT The address of the collectNFT associated with this group, if any.
+     */
+    struct GroupStruct {
+        uint256 profileId;
+        string contentURI;
+        address joinModule;
+        address joinNFT;
+        address collectModule;
+        address collectNFT;
     }
 
     /**
@@ -276,6 +300,63 @@ library DataTypes {
     }
 
     /**
+    * @notice A struct containing the parameters required for the `groupComment()` function.
+    *
+    * @param profileId The token ID of the profile to publish to.
+    * @param contentURI The URI to set for this new publication.
+    * @param profileIdPointed The profile token ID to point the comment to.
+    * @param pubIdPointed The publication ID of post to point the comment to.
+    * @param groupId The group publication ID to point the comment to its post.
+    * @param referenceModuleData The data passed to the reference module.
+    * @param collectModule The collect module to set for this new publication.
+    * @param collectModuleInitData The data to pass to the collect module's initialization.
+    * @param referenceModule The reference module to set for the given publication, must be whitelisted.
+    * @param referenceModuleInitData The data to be passed to the reference module for initialization.
+    */
+    struct GroupCommentData {
+        uint256 profileId;
+        string contentURI;
+        uint256 profileIdPointed;
+        uint256 pubIdPointed;
+        uint256 groupId;
+        bytes referenceModuleData;
+        address collectModule;
+        bytes collectModuleInitData;
+        address referenceModule;
+        bytes referenceModuleInitData;
+    }
+
+    /**
+    * @notice A struct containing the parameters required for the `groupCommentWithSig()` function. Parameters are the same as
+    * the regular `groupComment()` function, with an added EIP712Signature.
+    *
+    * @param profileId The token ID of the profile to publish to.
+    * @param contentURI The URI to set for this new publication.
+    * @param profileIdPointed The profile token ID to point the comment to.
+    * @param pubIdPointed The publication ID of post to point the comment to.
+    * @param groupId The group publication ID to point the comment to its post.
+    * @param referenceModuleData The data passed to the reference module.
+    * @param collectModule The collect module to set for this new publication.
+    * @param collectModuleInitData The data to pass to the collect module's initialization.
+    * @param referenceModule The reference module to set for the given publication, must be whitelisted.
+    * @param referenceModuleInitData The data to be passed to the reference module for initialization.
+    * @param sig The EIP712Signature struct containing the profile owner's signature.
+    */
+    struct GroupCommentWithSigData {
+        uint256 profileId;
+        string contentURI;
+        uint256 profileIdPointed;
+        uint256 pubIdPointed;
+        uint256 groupId;
+        bytes referenceModuleData;
+        address collectModule;
+        bytes collectModuleInitData;
+        address referenceModule;
+        bytes referenceModuleInitData;
+        EIP712Signature sig;
+    }
+
+    /**
      * @notice A struct containing the parameters required for the `mirror()` function.
      *
      * @param profileId The token ID of the profile to publish to.
@@ -317,6 +398,51 @@ library DataTypes {
     }
 
     /**
+     * @notice A struct containing the parameters required for the `groupMirror()` function.
+     *
+     * @param profileId The token ID of the profile to publish to.
+     * @param profileIdPointed The profile token ID to point the mirror to.
+     * @param pubIdPointed The publication ID to point the mirror to.
+     * @param groupId The group publication ID to point the mirror to its post.
+     * @param referenceModuleData The data passed to the reference module.
+     * @param referenceModule The reference module to set for the given publication, must be whitelisted.
+     * @param referenceModuleInitData The data to be passed to the reference module for initialization.
+     */
+    struct GroupMirrorData {
+        uint256 profileId;
+        uint256 profileIdPointed;
+        uint256 pubIdPointed;
+        uint256 groupId;
+        bytes referenceModuleData;
+        address referenceModule;
+        bytes referenceModuleInitData;
+    }
+
+    /**
+     * @notice A struct containing the parameters required for the `groupMirrorWithSig()` function. Parameters are the same as
+     * the regular `groupMirror()` function, with an added EIP712Signature.
+     *
+     * @param profileId The token ID of the profile to publish to.
+     * @param profileIdPointed The profile token ID to point the mirror to.
+     * @param pubIdPointed The publication ID to point the mirror to.
+     * @param groupId The group publication ID to point the mirror to its post.
+     * @param referenceModuleData The data passed to the reference module.
+     * @param referenceModule The reference module to set for the given publication, must be whitelisted.
+     * @param referenceModuleInitData The data to be passed to the reference module for initialization.
+     * @param sig The EIP712Signature struct containing the profile owner's signature.
+     */
+    struct GroupMirrorWithSigData {
+        uint256 profileId;
+        uint256 profileIdPointed;
+        uint256 pubIdPointed;
+        uint256 groupId;
+        bytes referenceModuleData;
+        address referenceModule;
+        bytes referenceModuleInitData;
+        EIP712Signature sig;
+    }
+
+    /**
      * @notice A struct containing the parameters required for the `followWithSig()` function. Parameters are the same
      * as the regular `follow()` function, with the follower's (signer) address and an EIP712Signature added.
      *
@@ -351,6 +477,26 @@ library DataTypes {
     }
 
     /**
+     * @notice A struct containing the parameters required for the `groupCollectWithSig()` function. Parameters are the same as
+     * the regular `collect()` function, with the collector's (signer) address and an EIP712Signature added.
+     *
+     * @param collector The collector which is the message signer.
+     * @param profileId The token ID of the profile that published the publication to collect.
+     * @param groupId The group ID in which the publication to collect is published.
+     * @param pubId The publication to collect's publication ID.
+     * @param data The arbitrary data to pass to the collectModule if needed.
+     * @param sig The EIP712Signature struct containing the collector's signature.
+     */
+    struct GroupCollectWithSigData {
+        address collector;
+        uint256 profileId;
+        uint256 groupId;
+        uint256 pubId;
+        bytes data;
+        EIP712Signature sig;
+    }
+
+    /**
      * @notice A struct containing the parameters required for the `setProfileMetadataWithSig()` function.
      *
      * @param profileId The profile ID for which to set the metadata.
@@ -375,6 +521,89 @@ library DataTypes {
         address follower;
         uint256[] profileIds;
         bool[] enables;
+        EIP712Signature sig;
+    }
+    /**
+    * @notice A struct containing the parameters required for the 'group()' function.
+    *
+    * @param profileId The token ID of the profile to publish/create the group.
+    * @param contentURI The URI to set for this group.
+    * @param collectModule The collect module to set for this group.
+    * @param collectModuleInitData The data to pass to the collect module's initialization.
+    * @param joinModule The join module to set for this group.
+    * @param joinModuleInitData The data to pass to the join module's initialization.
+    */
+    struct GroupData {
+        uint256 profileId;
+        string contentURI;
+        address collectModule;
+        bytes collectModuleInitData;
+        address joinModule;
+        bytes joinModuleInitData;
+    }
+    /**
+    * @notice A struct containing the parameters required for the 'groupWithSig()' function. Parameters are the same as
+    * the regular 'group()' function, with an added EIP712Signature.
+    *
+    * @param profileId The token ID of the profile to publish/create the group.
+    * @param contentURI The URI to set for this group.
+    * @param collectModule The collect module to set for this group.
+    * @param collectModuleInitData The data to pass to the collect module's initialization.
+    * @param joinModule The join module to set for this group.
+    * @param joinModuleInitData The data to pass to the join module's initialization.
+    * @param sig The EIP712Signature struct containing the profile owner's signature.
+    */
+    struct GroupWithSigData {
+        uint256 profileId;
+        string contentURI;
+        address collectModule;
+        bytes collectModuleInitData;
+        address joinModule;
+        bytes joinModuleInitData;
+        EIP712Signature sig;
+    }
+    /**
+    * @notice A struct containing the parameters required for the `groupPost()` function.
+    *
+    * @param profileId The token ID of the profile publishing this post.
+    * @param groupId The group ID to publish to.
+    * @param contentURI The URI to set for this new publication.
+    * @param collectModule The collect module to set for this new publication.
+    * @param collectModuleInitData The data to pass to the collect module's initialization.
+    * @param referenceModule The reference module to set for the given publication, must be whitelisted.
+    * @param referenceModuleInitData The data to be passed to the reference module for initialization.
+    */
+    struct GroupPostData {
+        uint256 profileId;
+        uint256 groupId;
+        string contentURI;
+        address collectModule;
+        bytes collectModuleInitData;
+        address referenceModule;
+        bytes referenceModuleInitData;
+    }
+
+    /**
+    * @notice A struct containing the parameters required for the `groupPostWithSig()` function. Parameters are the same as
+    * the regular `groupPost()` function, with an added EIP712Signature.
+    *
+    * @param profileId The token ID of the profile publishing this post.
+    * @param groupId The group ID to publish to.
+    * @param contentURI The URI to set for this new publication.
+    * @param collectModule The collect module to set for this new publication.
+    * @param collectModuleInitData The data to pass to the collect module's initialization.
+    * @param referenceModule The reference module to set for the given publication, must be whitelisted.
+    * @param referenceModuleInitData The data to be passed to the reference module for initialization.
+    * @param sig The EIP712Signature struct containing the profile owner's signature.
+    */
+    struct GroupPostWithSigData {
+        uint256 profileId;
+        uint256 groupId;
+        string contentURI;
+        address collectModule;
+        bytes collectModuleInitData;
+        address referenceModule;
+        bytes referenceModuleInitData;
         EIP712Signature sig;
     }
 }
